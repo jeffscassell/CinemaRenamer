@@ -23,7 +23,7 @@ class Unknown(Cinema):
         self._buildNewFileName()
         self._doErrorCheck()
 
-    def getParentDir(self) -> str:
+    def parentDir(self) -> str:
         if self.__isFile:
             return self._parentDir
         else:

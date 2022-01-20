@@ -19,10 +19,9 @@ class Cinema(ABC):
 
     def __init__(self, filePath: str):
         self.__oldAbsPath = filePath
-        temp = os.path.split(filePath)
-        self._parentDir = temp[0]
+        self._parentDir = os.path.dirname(filePath)
 
-        tmp = os.path.splitext(temp[1])
+        tmp = os.path.splitext(os.path.basename(filePath))
         self.__oldFileName = tmp[0]
         self.__fileExt = tmp[1]
 
@@ -78,14 +77,14 @@ class Cinema(ABC):
     def getError(self) -> str:
         return self.__error
 
-    def getParentDir(self):
+    def parentDir(self):
         return self._parentDir
 
     def getOldAbsPath(self) -> str:
         return self.__oldAbsPath
 
     def getNewAbsPath(self) -> str:
-        return f"{self.getParentDir()}\\{self.getNewFileName()}{self.getFileExt()}"
+        return f"{self.parentDir()}\\{self.getNewFileName()}{self.getFileExt()}"
 
     def getOldFileName(self) -> str:
         return self.__oldFileName
@@ -136,7 +135,7 @@ class Cinema(ABC):
 
     def _doErrorCheck(self) -> None:
         if not self.__isChanged():
-            self.setError("File is already correctly formatted.")
+            self.setError("ALREADY CORRECT")
 
     def _capitalize(self, title: str) -> str:
         articles = ["a", "an", "the"]

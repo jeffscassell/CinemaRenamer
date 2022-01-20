@@ -22,13 +22,42 @@ class Parser:
     __missingSpacesPattern: re.Pattern
     __beginningTagsPattern: re.Pattern
 
+    __unprocessedCinemaList: list[Cinema]
+    __unknownList: list[Unknown]
+    __errorList: list[Cinema]
+    __processedCinemaList: list[Cinema]
+
     def __init__(self):
         self.__buildPatterns()
 
-    def getCinemaList(self, pathList: list[str] or str) -> list[Cinema]:
-        """ Accepts a list of paths, or a single path, in string form and returns a list of Cinema objects. """
+    def parseAndGetList(self, pathList: list[str] or str) -> list[Cinema]:
+        self.parseCinemaPaths(pathList)
+        return self.getUnprocessedCinemaList()
 
-        # convert single args into a list
+    def parseCinemaPaths(self, pathList: list[str] or str) -> None:
+
+        def extractUnknownFromCinemaList() -> list[Unknown]:
+            returnList = []
+            for obj in cinemaList:
+                if isinstance(obj, Unknown):
+                    returnList.append(obj)
+
+            for obj in returnList:
+                cinemaList.remove(obj)
+
+            return returnList
+
+        def extractErrorFromCinemaList() -> list[Cinema]:
+            returnList = []
+            for obj in cinemaList:
+                if obj.hasError():
+                    returnList.append(obj)
+
+            for obj in returnList:
+                cinemaList.remove(obj)
+
+            return returnList
+
         if isinstance(pathList, str):
             pathList = [pathList]
 
@@ -43,7 +72,27 @@ class Parser:
             else:
                 cinemaList.append(cinema)
 
-        return cinemaList
+        self.__unprocessedCinemaList = cinemaList.copy()
+
+        unknownList = extractUnknownFromCinemaList()
+        self.__unknownList = unknownList
+
+        errorList = extractErrorFromCinemaList()
+        self.__errorList = errorList
+
+        self.__processedCinemaList = cinemaList
+
+    def getUnprocessedCinemaList(self) -> list[Cinema]:
+        return self.__unprocessedCinemaList
+
+    def getProcessedCinemaList(self) -> list[Cinema]:
+        return self.__processedCinemaList
+
+    def getUnknownCinemaList(self) -> list[Unknown]:
+        return self.__unknownList
+
+    def getErrorCinemaList(self) -> list[Cinema]:
+        return self.__errorList
 
     def _getCinema(self, path: str) -> Cinema or list[Cinema]:
         """ Parse a single path in string form and return either a single concrete Cinema object, or a list of them,

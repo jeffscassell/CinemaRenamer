@@ -10,6 +10,10 @@ class Database(ABC):
         """ Add a new record to the database. """
 
     @abstractmethod
+    def renameAndCreate(self, record: Cinema):
+        """ Rename record before creating to compensate for an existing record conflict. """
+
+    @abstractmethod
     def read(self, record: str) -> Cinema:
         """ Read a record from the database. """
 

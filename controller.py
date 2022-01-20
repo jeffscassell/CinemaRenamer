@@ -28,8 +28,17 @@ class Controller:
     # PARSER #
     ##########
 
-    def getParsedCinemaObjs(self, model: list[str]) -> list[Cinema]:
-        return self.__parser.getCinemaList(model)
+    def parseCinemaPaths(self, model: list[str]) -> None:
+        self.__parser.parseCinemaPaths(model)
+
+    def getGoodCinemaList(self) -> list[Cinema]:
+        return self.__parser.getUnprocessedCinemaList()
+
+    def getUnknownCinemaList(self) -> list[Cinema]:
+        return self.__parser.getUnknownCinemaList()
+
+    def getErrorCinemaList(self) -> list[Cinema]:
+        return self.__parser.getErrorCinemaList()
 
     ###########
     # HANDLER #
@@ -39,22 +48,22 @@ class Controller:
         return self.__database.getBackupAbsPath()
 
     def rename(self, obj: Cinema) -> None:
-        self.__handler.rename(obj)
+        self.__handler.createBackupAndRename(obj)
 
-    def getCinemaObjFromBackup(self, path: str) -> Cinema:
-        return self.__handler.getCinemaObjFromBackup(path)
+    def readCinemaFromBackup(self, path: str) -> Cinema:
+        return self.__handler.readCinemaFromBackup(path)
 
-    def restore(self, path: str) -> None:
-        self.__handler.restore(path)
+    def restoreFromBackup(self, path: str) -> None:
+        self.__handler.restoreFromBackup(path)
 
     #############
     # VALIDATOR #
     #############
 
-    def doValidation(self, model) -> None:
+    def validate(self, model) -> None:
         self.__validator.doValidation(model)
 
-    def checkForValidationErrors(self) -> bool:
+    def hasValidationErrors(self) -> bool:
         return self.__validator.hasErrors()
 
     def getValidationErrorNum(self) -> int:
@@ -63,10 +72,10 @@ class Controller:
     def getValidationErrorDict(self) -> dict[str, list[str]]:
         return self.__validator.getErrorsDict()
 
-    def hasCinemaArgs(self) -> bool:
+    def hasValidatedCinemaArgs(self) -> bool:
         return self.__validator.hasCinema()
 
-    def hasBackupArgs(self) -> bool:
+    def hasValidatedBackupArgs(self) -> bool:
         return self.__validator.hasBackup()
 
     def getCinemaArgs(self) -> list[str]:

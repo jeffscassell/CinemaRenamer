@@ -56,6 +56,7 @@ class Show(Cinema):
     def getPattern() -> re.Pattern:
         """ Returns a Pattern object to be used in identifying a Show object. """
 
+        # matches: Title of a Show; (optional) - More to the Title; S01; E02; (optional) Title of the Episode
         return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ )+?)(- (\w+ )+- |- (\w+ )+|- )?([sS]eason|[sS])? ?"
                           r"(?P<season>\d{1,2})(x|[eE]pisode|[eE]) ?(?P<episode>\d{1,2})( \[?\d{3,4}p.*| - | |$)"
                           r"(?P<episodeTitle>([!0-9a-zA-Z.',_\-]+( |$))+?||$)(\[?\d{3,4}p|\[|$)")

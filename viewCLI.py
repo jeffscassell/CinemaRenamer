@@ -16,32 +16,29 @@ class ViewCLI(View):
         print()
         self.controller = controller
 
-        self.__doValidation(model)
+        self.__validateInput(model)
 
-        if self.controller.hasCinemaArgs() and self.controller.hasBackupArgs():
-            self.__printHeader("cinema and backup files recognized. processing cinema first.")
+        if self.controller.hasValidatedCinemaArgs():
             self.__processCinema(self.controller.getCinemaArgs())
-            self.__processRestore(self.controller.getBackupArgs())
-        elif self.controller.hasCinemaArgs():
-            self.__processCinema(self.controller.getCinemaArgs())
-        else:
+        if self.controller.hasValidatedBackupArgs():
             self.__processRestore(self.controller.getBackupArgs())
 
         print("\nEXITING.\n")
         os.system("pause")
         exit()
 
-    def __doValidation(self, model: list[str]) -> None:
+    def __validateInput(self, model: list[str]) -> None:
 
-        def printErrors(errorsDict: dict[str, list[str]]) -> None:
-            for error, errorPaths in errorsDict.items():
-                for path in errorPaths:
+        def printErrors() -> None:
+            errorsDict = self.controller.getValidationErrorDict()
+            for error, errorPathList in errorsDict.items():
+                for path in errorPathList:
                     print(f"{error}: {path}")
 
         print("VALIDATING INPUT... ", end="")
 
         try:
-            self.controller.doValidation(model)
+            self.controller.validate(model)
         except ValueError as e:
             print("[FAIL]\n")
             print(f"{e}\n"
@@ -53,58 +50,76 @@ class ViewCLI(View):
             os.system("pause")
             exit(1)
 
-        if self.controller.checkForValidationErrors():
+        if self.controller.hasValidationErrors():
             print(f"[{self.controller.getValidationErrorNum()} ERROR(S)]\n")
-
-            printErrors(self.controller.getValidationErrorDict())
+            printErrors()
         else:
             print("[OK]\n")
 
     def __processCinema(self, model: list[str]) -> None:
 
-        def getUnknownCinema(inpList: list[Cinema]) -> list[Cinema]:
-            returnList = []
-            for obj in inpList:
-                if isinstance(obj, Unknown):
-                    unknownList.append(obj)
-            return returnList
-
-        def getErrorCinema(inpList: list[Cinema]) -> list[Cinema]:
-            returnList = []
-            for obj in inpList:
-                if obj.hasError():
-                    returnList.append(obj)
-            return returnList
-
-        self.__printHeader("processing cinema files")
-
-        cinemaList = self.controller.getParsedCinemaObjs(model)
-
-        unknownList = getUnknownCinema(cinemaList)
-
-        if len(unknownList) > 0:
-            self.__printHeader("removing unrecognized files")
+        def processUnknownList() -> None:
+            self.__printHeader(f"removed {len(unknownList)} unrecognized file(s)")
             for obj in unknownList:
-                cinemaList.remove(obj)
                 print(f"    -> {obj.getOldAbsPath()}")
             print()
 
-        errorList = getErrorCinema(cinemaList)
-
-        if len(errorList) > 0:
-            for obj in errorList:
-                cinemaList.remove(obj)
-            self.__printHeader("removing detected errors")
+        def processErrorList() -> None:
+            self.__printHeader(f"removed {len(errorList)} detected error(s)")
             self.__printCinemaTree(errorList)
 
-        self.__printHeader("cinema files finished processing")
+        self.__printHeader(f"processing {len(model)} cinema file(s)")
+
+        self.controller.parseCinemaPaths(model)
+        cinemaList = self.controller.getGoodCinemaList()
+        unknownList = self.controller.getUnknownCinemaList()
+        errorList = self.controller.getErrorCinemaList()
+
+        if len(unknownList) > 0:
+            processUnknownList()
+
+        if len(errorList) > 0:
+            processErrorList()
+
+        self.__printHeader("cinema file(s) finished processing")
 
         if len(cinemaList) > 0:
-            self.__printCinemaTree(cinemaList)
-        else:
-            return
+            self.__promptForRenamingAction(cinemaList)
 
-        choiceOptions = self.__getListOfIndexOptions(cinemaList)
+    def __promptForRenamingAction(self, cinemaList: list[Cinema]) -> None:
+
+        def processCorrectionChoices() -> None:
+
+            def newNameHasIllegalChar() -> bool:
+                illegal = False
+                for char in newName:
+                    if char in illegalChars:
+                        illegal = True
+                return illegal
+
+            for index in choices:
+                index = int(index)
+                print(f" {index:>4d}: {cinemaList[index].getNewFileName()}")
+
+                illegalChars = ["\\", "/", ":", "*", "\"", "<", ">", "|"]
+                newName = ""
+                cont = True
+                while cont:
+                    newName = input("    -> ")
+
+                    if len(newName) > 0:
+                        cont = False
+
+                        if newNameHasIllegalChar():
+                            cont = True
+                            print("       ILLEGAL CHARACTER ENTERED:  \\ / : * \" < > |")
+
+                cinemaList[index].setNewFileName(newName)
+                print()
+
+        self.__printCinemaTree(cinemaList)
+
+        correctionChoiceOptions = self.__getListOfIndexOptions(cinemaList)
         choice = ""
         while choice != "y":
             print("TO MAKE MANUAL EDITS, SPECIFY THEIR INDICES SEPARATED BY A SPACE (2 11 0 ...).")
@@ -115,67 +130,48 @@ class ViewCLI(View):
             if choice == "n":
                 return
             else:
-                valid = True
+                doCorrections = True
                 choices = choice.split()
-                for arg in choices:
-                    if arg not in choiceOptions:
-                        valid = False
-                if valid:
+                for i in choices:
+                    if i not in correctionChoiceOptions:
+                        doCorrections = False
+                if doCorrections:
                     print()
-                    self.__doCorrections(cinemaList, choices)
+                    processCorrectionChoices()
+                    self.__printHeader("edited cinema files")
+                    self.__printCinemaTree(cinemaList)
 
         self.__doRename(cinemaList)
 
-    def __doCorrections(self, model: list[Cinema], choices: list[str]) -> None:
+    def __doRename(self, cinemaList: list[Cinema]) -> None:
 
-        def hasIllegalChar(inp: str) -> bool:
-            illegal = False
-            for char in inp:
-                if char in illegalChars:
-                    illegal = True
-            return illegal
+        def attemptRename(numErrors) -> None:  # todo figure out why function can't see local numErrors
+            for obj in cinemaList:
+                try:
+                    self.controller.rename(obj)
+                except ValueError or FileNotFoundError as e:
+                    numErrors += 1
+                    errors.append(f"{str(e)}: {obj.getNewFileName()}{obj.getFileExt()}")
+                except FileExistsError:
+                    numErrors += 1
+                    renameList.append(obj)
 
-        for choice in choices:
-            choice = int(choice)
-            print(f" {choice:>4d}: {model[choice].getNewFileName()}")
-
-            # loop here based on input validation
-            illegalChars = ["\\", "/", ":", "*", "\"", "<", ">", "|"]
-            newName = ""
-            cont = True
-            while cont:
-                newName = input("    -> ")
-
-                if len(newName) > 0:
-                    cont = False
-
-                    if hasIllegalChar(newName):
-                        cont = True
-                        print("       ILLEGAL CHARACTER ENTERED:  \\ / : * \" < > |")
-
-            model[choice].setNewFileName(newName)
+        def handleErrors() -> None:
+            for error in errors:
+                print(error)
             print()
 
-        self.__printHeader("edited cinema files")
-        self.__printCinemaTree(model)
-
-    def __doRename(self, model: list[Cinema]) -> None:
-        print("\nRENAMING FILES... ", end="")
+        print(f"\nRENAMING {len(cinemaList)} FILES... ", end="")
         numErrors = 0
         errors = []
+        renameList = []
 
-        # attempt to rename files and handle/count errors
-        for obj in model:
-            try:
-                self.controller.rename(obj)
-            except ValueError as e:
-                numErrors += 1
-                errors.append(f"{str(e)}: {obj.getNewFileName()}{obj.getFileExt()}")
+        attemptRename(numErrors)
 
         if numErrors == 0:
             print("[OK]\n")
         else:
-            print(f"[{numErrors} ERROR(S)]\n")
+            print(f"[{numErrors} ERROR(S), {len(cinemaList) - numErrors} OK]\n")
             for error in errors:
                 print(error)
             print()
@@ -187,9 +183,12 @@ class ViewCLI(View):
         self.__printHeader("processing backup files")
 
         cinemaList = []
-        # display passed files
+
         for path in model:
-            cinemaList.append(self.controller.getCinemaObjFromBackup(path))
+            try:
+                cinemaList.append(self.controller.readCinemaFromBackup(path))
+            except ValueError or FileNotFoundError as e:
+                pass
 
         i = 1
         for obj in cinemaList:
@@ -216,7 +215,7 @@ class ViewCLI(View):
 
         for path in model:
             try:
-                self.controller.restore(path)
+                self.controller.restoreFromBackup(path)
             except Exception as e:
                 numErrors += 1
                 print(e)
@@ -232,7 +231,8 @@ class ViewCLI(View):
             print(f"OPERATION COMPLETE. ORIGINAL FILE NAMES ARE BACKED UP TO:\n"
                   f"{self.controller.getBackupDir()}\n")
 
-    def __printHeader(self, inp: str) -> None:
+    @staticmethod
+    def __printHeader(inp: str) -> None:
         underlineChar = "+"
         underline = ""
         for _ in range(len(inp)+4):
@@ -242,27 +242,37 @@ class ViewCLI(View):
               f"{underlineChar} {inp.upper()} {underlineChar}\n"
               f"{underline}\n")
 
-    def __printCinemaTree(self, cinemaList: list[Cinema]) -> None:
+    @staticmethod
+    def __printCinemaTree(cinemaList: list[Cinema]) -> None:
+
+        def printErrorCinema() -> None:
+            print(f"    - {obj.getOldFileName()}{obj.getFileExt()}")  # 5 spaces to actual text
+            print(f"      [!]     {obj.getError()}")
+
+        def printCinema() -> None:
+            print(f" {i:>4d}: {obj.getOldFileName()}{obj.getFileExt()}")  # 6 spaces to actual text
+            print(f"    -> {obj.getNewFileName()}{obj.getFileExt()}")
+
         i = 0
         currentDir = ""
 
         for obj in cinemaList:
-            if currentDir == obj.getParentDir():
+            if currentDir == obj.parentDir():
                 if obj.hasError():
-                    self.__printErrorCinema(obj)
+                    printErrorCinema()
                 else:
-                    self.__printCinema(obj, i)
+                    printCinema()
 
                 print()
             else:
                 print()
-                currentDir = obj.getParentDir()
+                currentDir = obj.parentDir()
                 print(currentDir)
 
                 if obj.hasError():
-                    self.__printErrorCinema(obj)
+                    printErrorCinema()
                 else:
-                    self.__printCinema(obj, i)
+                    printCinema()
 
                 print()
 
@@ -270,40 +280,11 @@ class ViewCLI(View):
 
         print()
 
-    def __printErrorCinema(self, cinema: Cinema) -> None:
-        print(f"    - {cinema.getOldFileName()}{cinema.getFileExt()}")  # 5 spaces to actual text
-        print(f"      [!]     {cinema.getError()}")
-
-    def __printCinema(self, cinema: Cinema, i: int) -> None:
-        print(f" {i:>4d}: {cinema.getOldFileName()}{cinema.getFileExt()}")  # 6 spaces to actual text
-        print(f"    -> {cinema.getNewFileName()}{cinema.getFileExt()}")
-
-    def __getListOfIndexOptions(self, lst) -> list:
+    @staticmethod
+    def __getListOfIndexOptions(lst) -> list:
         i = 0
-        count = []
+        indexList = []
         for _ in lst:
-            count.append(str(i))
+            indexList.append(str(i))
             i += 1
-        return count
-
-    # def __printRestoreCinema(self, restoreList: list[Cinema]) -> None:
-    #     i = 1
-    #     for obj in restoreList:
-    #         print(f" {i:>3d}: {obj.getNewFileName()}{obj.getFileExt()}\n"
-    #               f"   -> {obj.getOldFileName()}{obj.getFileExt()}\n")
-    #         i += 1
-
-    # def __displayCinema(self, model: list[Cinema], rename: bool) -> None:
-    #     i = 0
-    #     currentDir = ""
-    #
-    #     for cinema in model:
-    #         if currentDir == cinema.getParentDir():
-    #             self.__printErrorCinema(cinema, i)
-    #         else:
-    #             print()
-    #             currentDir = cinema.getParentDir()
-    #             print(currentDir)
-    #             self.__printErrorCinema(cinema, i)
-    #
-    #         i += 1
+        return indexList

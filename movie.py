@@ -31,6 +31,7 @@ class Movie(Cinema):
     def getPattern() -> re.Pattern:
         """ Returns a Pattern object to be used in identifying a Movie object. """
 
+        # matches: Title of My-movie; (optional) - Part II; 2012 or (2012) or [2012];
         return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ (- )?)+?)(- (\w+ )+- |(- (\w+ )+)|- )?[([]?"
                           r"(?P<date>\d{4})[]) ]")
 

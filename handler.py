@@ -9,25 +9,23 @@ class Handler:
     def __init__(self, database: Database):
         self.database = database
 
-    def rename(self, renameObj: Cinema) -> None:  # throws ValueError
-        """ Rename a Cinema file. """
+    def createBackupAndRename(self, cinema: Cinema) -> None:  # throws ValueError, FileNotFoundError
+        """ Backup and rename a Cinema file. """
 
-        if renameObj.hasError():
-            raise ValueError("Attempted to rename an already correctly formatted file")
+        self.database.create(cinema)
+        os.rename(cinema.getOldAbsPath(), cinema.getNewAbsPath())
 
-        # backup
-        self.database.create(renameObj)
+    def renameBackupAndRename(self, cinema: Cinema) -> None:
+        self.database.renameAndCreate(cinema)
+        os.rename(cinema.getOldAbsPath(), cinema.getNewAbsPath())
 
-        # rename
-        os.rename(renameObj.getOldAbsPath(), renameObj.getNewAbsPath())
-
-    def getCinemaObjFromBackup(self, path: str) -> Cinema:  # throws ValueError, FileNotFoundError
+    def readCinemaFromBackup(self, path: str) -> Cinema:  # throws ValueError, FileNotFoundError
         """ Attempt to retrieve the provided path as a backup Cinema object. """
 
         return self.database.read(path)
 
-    def restore(self, restorePath: str) -> None:  # throws ValueError, FileNotFoundError
-        """ Restore from Cinema file from a backup file path. """
+    def restoreFromBackup(self, restorePath: str) -> None:  # throws ValueError, FileNotFoundError
+        """ Restore a Cinema file from a backup file path. """
 
         cinema = self.database.read(restorePath)
 
