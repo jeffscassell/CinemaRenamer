@@ -1,7 +1,7 @@
 from cinema import Cinema
 from view import View
-from cinemaParser import Parser
-from handler import Handler
+from parser import Parser
+from fileHandler import FileHandler
 from databasePickle import DatabasePickle
 from inputValidator import InputValidator
 
@@ -14,7 +14,7 @@ class Controller:
 
     __parser = Parser()
     __database = DatabasePickle()
-    __handler = Handler(__database)
+    __handler = FileHandler(__database)
     __validator = InputValidator()
 
     def __init__(self, model: list, view: View):
@@ -28,33 +28,58 @@ class Controller:
     # PARSER #
     ##########
 
-    def parseCinemaPaths(self, model: list[str]) -> None:
+    def parseCinemaPaths(self, model: list[str] or str) -> None:
         self.__parser.parseCinemaPaths(model)
 
-    def getGoodCinemaList(self) -> list[Cinema]:
-        return self.__parser.getUnprocessedCinemaList()
+    def getProcessedCinemaList(self) -> list[Cinema]:
+        return self.__parser.getProcessedCinemaList()
 
     def getUnknownCinemaList(self) -> list[Cinema]:
         return self.__parser.getUnknownCinemaList()
 
-    def getErrorCinemaList(self) -> list[Cinema]:
-        return self.__parser.getErrorCinemaList()
+    def getAlreadyCorrectCinemaList(self) -> list[Cinema]:
+        return self.__parser.getAlreadyCorrectCinemaList()
+
+    # def getErrorCinemaList(self) -> list[Cinema]:
+    #     return self.__parser.getErrorCinemaList()
 
     ###########
     # HANDLER #
     ###########
 
-    def getBackupDir(self) -> str:
-        return self.__database.getBackupAbsPath()
+    def getBackupsDir(self) -> str:
+        return self.__database.getBackupsAbsPath()
+
+    def backup(self, obj: Cinema) -> None:  # throws ValueError if name is unchanged
+        """ Create database record of Cinema object. """
+
+        self.__handler.backup(obj)
+
+    def backupOverwrite(self, obj: Cinema) -> None:
+        self.__handler.backupOverwrite(obj)
+
+    def backupAppend(self, obj: Cinema) -> None:
+        self.__handler.backupAppend(obj)
+
+    def deleteBackup(self, obj: Cinema) -> None:
+        self.__handler.deleteBackup(obj)
 
     def rename(self, obj: Cinema) -> None:
-        self.__handler.createBackupAndRename(obj)
+        """ Rename the Cinema object's file. """
+        
+        self.__handler.rename(obj)
+    
+    def integrateIntoLibrary(self, obj: Cinema, library: str, copyFlag: bool, overwriteFlag: bool) -> None:
+        """ The object file is integrated into the provided library directory. The copy flag indicates if the file is meant to be copied from the original directory into the new one, or moved.
+            The overwrite flag indicates if the file is to be overwritten when a conflict exists, or skipped. """
 
-    def readCinemaFromBackup(self, path: str) -> Cinema:
-        return self.__handler.readCinemaFromBackup(path)
+        self.__handler.integrateIntoLibrary(obj, library, copyFlag, overwriteFlag)
 
-    def restoreFromBackup(self, path: str) -> None:
-        self.__handler.restoreFromBackup(path)
+    def readObjFromBackup(self, path: str) -> Cinema:
+        return self.__handler.readObjFromBackup(path)
+
+    def restoreBackupObj(self, obj: str) -> None:
+        self.__handler.restoreBackupObj(obj)
 
     #############
     # VALIDATOR #
@@ -63,10 +88,7 @@ class Controller:
     def validate(self, model) -> None:
         self.__validator.doValidation(model)
 
-    def hasValidationErrors(self) -> bool:
-        return self.__validator.hasErrors()
-
-    def getValidationErrorNum(self) -> int:
+    def getValidationNumErrors(self) -> int:
         return self.__validator.getNumErrors()
 
     def getValidationErrorDict(self) -> dict[str, list[str]]:

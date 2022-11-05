@@ -8,13 +8,14 @@ from unknown import Unknown
 
 
 class ClassPatternsEmpty(Exception):
+    """ If the concrete subclass patterns cannot be created, this error is raised. """
     pass
 
 
 class Parser:
     """ Parses passed path strings for relevant Cinema objects by matching against Cinema patterns. """
 
-    __patternDict: dict[re.Pattern, ...]  # {pattern: class, ...}
+    __patternDict: dict[re.Pattern, object]  # {pattern: class, ...}
     __resolutionPattern: re.Pattern
     __encodingPattern: re.Pattern
     __spacingPattern: re.Pattern
@@ -22,41 +23,42 @@ class Parser:
     __missingSpacesPattern: re.Pattern
     __beginningTagsPattern: re.Pattern
 
-    __unprocessedCinemaList: list[Cinema]
+    __unprocessedList: list[Cinema]
     __unknownList: list[Unknown]
-    __errorList: list[Cinema]
+    __alreadyCorrectList: list[Cinema]
+    # __errorList: list[Cinema]
     __processedCinemaList: list[Cinema]
 
     def __init__(self):
         self.__buildPatterns()
 
+    ###########
+    # GETTERS #
+    ###########
+
+    def getUnprocessedList(self) -> list[Cinema]:
+        return self.__unprocessedList
+
+    def getUnknownCinemaList(self) -> list[Unknown]:
+        return self.__unknownList
+
+    def getAlreadyCorrectCinemaList(self) -> list[Cinema]:
+        return self.__alreadyCorrectList
+
+    # def getErrorCinemaList(self) -> list[Cinema]:
+    #     return self.__errorList
+
+    def getProcessedCinemaList(self) -> list[Cinema]:
+        return self.__processedCinemaList
+
+
+
     def parseAndGetList(self, pathList: list[str] or str) -> list[Cinema]:
         self.parseCinemaPaths(pathList)
-        return self.getUnprocessedCinemaList()
+        return self.getUnprocessedList()
 
     def parseCinemaPaths(self, pathList: list[str] or str) -> None:
-
-        def extractUnknownFromCinemaList() -> list[Unknown]:
-            returnList = []
-            for obj in cinemaList:
-                if isinstance(obj, Unknown):
-                    returnList.append(obj)
-
-            for obj in returnList:
-                cinemaList.remove(obj)
-
-            return returnList
-
-        def extractErrorFromCinemaList() -> list[Cinema]:
-            returnList = []
-            for obj in cinemaList:
-                if obj.hasError():
-                    returnList.append(obj)
-
-            for obj in returnList:
-                cinemaList.remove(obj)
-
-            return returnList
+        """ Main method for this class. Performs all the processing on a passed list and extracts Unknown, Cinema, and Cinema objects with errors into separate lists. """
 
         if isinstance(pathList, str):
             pathList = [pathList]
@@ -72,27 +74,33 @@ class Parser:
             else:
                 cinemaList.append(cinema)
 
-        self.__unprocessedCinemaList = cinemaList.copy()
+        self.__unprocessedList = cinemaList.copy()
 
-        unknownList = extractUnknownFromCinemaList()
+        # Extract unknown files from passed list of paths
+        unknownList: list[Unknown] = []
+        for obj in cinemaList[:]:
+            if isinstance(obj, Unknown):
+                unknownList.append(obj)
+                cinemaList.remove(obj)
         self.__unknownList = unknownList
 
-        errorList = extractErrorFromCinemaList()
-        self.__errorList = errorList
+        # Extract already-correct Cinema files from passed list
+        alreadyCorrectList: list[Cinema] = []
+        for obj in cinemaList[:]:
+            if obj.hasCorrectFileName() and obj.hasCorrectDirName():
+                alreadyCorrectList.append(obj)
+                cinemaList.remove(obj)
+        self.__alreadyCorrectList = alreadyCorrectList
+
+        # Extract Cinema objects that contain errors from passed list
+        # errorList: list[Cinema] = []
+        # for obj in cinemaList[:]:
+        #         if obj.hasError():
+        #             errorList.append(obj)
+        #             cinemaList.remove(obj)
+        # self.__errorList = errorList
 
         self.__processedCinemaList = cinemaList
-
-    def getUnprocessedCinemaList(self) -> list[Cinema]:
-        return self.__unprocessedCinemaList
-
-    def getProcessedCinemaList(self) -> list[Cinema]:
-        return self.__processedCinemaList
-
-    def getUnknownCinemaList(self) -> list[Unknown]:
-        return self.__unknownList
-
-    def getErrorCinemaList(self) -> list[Cinema]:
-        return self.__errorList
 
     def _getCinema(self, path: str) -> Cinema or list[Cinema]:
         """ Parse a single path in string form and return either a single concrete Cinema object, or a list of them,
@@ -103,10 +111,10 @@ class Parser:
         else:
             return self._getCinemaDir(path)
 
-    def _getCinemaFile(self, path: str) -> Cinema:
+    def _getCinemaFile(self, passed: str) -> Cinema:
         """ Parse a single file and return a single Cinema object. """
 
-        absPath = os.path.split(path)
+        absPath = os.path.split(passed)
         temp = os.path.splitext(absPath[1])  # file name
         fileName = temp[0]  # file name without extension
 
@@ -119,23 +127,23 @@ class Parser:
                 resolutionMatch = self.__getResolutionPattern().search(cleaned)
                 encodingMatch = self.__getEncodingPattern().search(cleaned)
 
-                return cls(path, specificMatch, resolutionMatch, encodingMatch)
+                return cls(passed, specificMatch, resolutionMatch, encodingMatch)
 
-        return Unknown(path, "Not a recognized Cinema file", isFile=True)
+        return Unknown(passed, "Not a recognized Cinema file", isFile=True)
 
     def _getCinemaDir(self, path: str) -> list[Cinema]:
         """ Parse a single directory and return a list of Cinema objects, or a single Unknown object if none exist.
-        Does not recurse into directories. """
+        Does not recurse into subdirectories. """
 
         dirContents = os.listdir(path)  # returns only the file names (not full paths)
         returnList = []
 
         for item in dirContents:
-            fullItem = os.path.join(path, item)  # convert list items to full paths
+            itemPath = os.path.join(path, item)  # convert list items to full paths
 
             # only process files (no recursion into directory trees)
-            if os.path.isfile(fullItem):
-                cinema = self._getCinemaFile(fullItem)
+            if os.path.isfile(itemPath):
+                cinema = self._getCinemaFile(itemPath)
 
                 if not isinstance(cinema, Unknown):
                     returnList.append(cinema)
@@ -162,6 +170,15 @@ class Parser:
         cleanFileName = re.sub(self.__beginningTagsPattern, "", cleanFileName)
 
         return cleanFileName
+
+    def __getPatternDict(self) -> dict:
+        return self.__patternDict
+
+    def __getEncodingPattern(self) -> re.Pattern:
+        return self.__encodingPattern
+
+    def __getResolutionPattern(self) -> re.Pattern:
+        return self.__resolutionPattern
 
     def __buildPatterns(self) -> None:
         """ Build's the CinemaParser's required Pattern objects from the Cinema base class and its subclasses. """
@@ -194,38 +211,3 @@ class Parser:
         self.__doubleSpacesPattern = re.compile(r" {2,}")
         self.__missingSpacesPattern = re.compile(r"((\w)([([])|([])])(\w))")
         self.__beginningTagsPattern = re.compile(r"^\[.+?] ?")
-
-    def __getPatternDict(self) -> dict:
-        return self.__patternDict
-
-    def __getEncodingPattern(self) -> re.Pattern:
-        return self.__encodingPattern
-
-    def __getResolutionPattern(self) -> re.Pattern:
-        return self.__resolutionPattern
-
-
-# class ParserTester(Parser):
-#     def _getCinema(self, path: str) -> Cinema or list[Cinema]:
-#
-#         if re.match(r".*\.[a-z0-9]{3}$", path):
-#             return self._getCinemaFile(path)
-#         else:
-#             return self._getCinemaDir(path)
-#
-#     def _getCinemaDir(self, path: str) -> list[Cinema]:
-#
-#         dirContents = os.listdir(path)  # returns only the file names (not full paths)
-#         returnList = []
-#
-#         for item in dirContents:
-#             fullItem = os.path.join(path, item)  # convert list items to full paths
-#
-#             # only process files (no recursion into directory trees)
-#             if re.match(r".*\.[a-z0-9]{3}$", fullItem):
-#                 cinema = self._getCinemaFile(fullItem)
-#
-#                 # if not isinstance(cinema, Unknown):
-#                 returnList.append(cinema)
-#
-#         return returnList

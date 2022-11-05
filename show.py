@@ -5,9 +5,10 @@ import re
 class Show(Cinema):
     """ A Cinema object specific to television show episodes. """
 
-    __season: str
-    __episode: str
-    __episodeTitle: str
+    _season: str
+    _episode: str
+    _episodeTitle: str
+    _isShow = True
 
     def __init__(self, filePath, specificMatch: re.Match, resolutionMatch: re.Match, encodingMatch: re.Match):
         super().__init__(filePath)
@@ -21,36 +22,42 @@ class Show(Cinema):
 
         # finalize object
         self._buildNewFileName()
-        self._doErrorCheck()
 
-    def _setSeason(self, passed: str) -> None:
-        """ Set the season of the Show object. """
+    ###########
+    # SETTERS #
+    ###########
 
-        self.__season = passed
-
-    def _setEpisode(self, passed: str) -> None:
-        """ Set the episode of the Show object. """
-
-        self.__episode = passed
+    def updateFileName(self, passed: str) -> None:
+        self._newFileName = passed
+        self._backupName = f"{self._newDir}.{passed + self._fileExt}"
 
     def _setEpisodeTitle(self, passed: str) -> None:
         # if len(passed) > 0:
         #     if passed[-1] == " ":
-        #         self.__episodeTitle = passed[:-1]
+        #         self._episodeTitle = passed[:-1]
         #     else:
-        #         self.__episodeTitle = passed
+        #         self._episodeTitle = passed
         # else:
-        #     self.__episodeTitle = passed
-        self.__episodeTitle = self._capitalize(passed)
+        #     self._episodeTitle = passed
+        self._episodeTitle = self._capitalize(passed)
 
-    def _getSeason(self) -> str:
-        return self.__season
+    def _setEpisode(self, passed: str) -> None:
+        self._episode = passed
 
-    def _getEpisode(self) -> str:
-        return self.__episode
+    ###########
+    # GETTERS #
+    ###########
+    
+    def getNewDir(self) -> str:
+        return self._title
+    
+    def getNewFileNameSimple(self) -> str:
+        name = f"{self._title} {self._season}x{self._episode}"
 
-    def _getEpisodeTitle(self) -> str:
-        return self.__episodeTitle
+        if not self._episodeTitle == "":
+            name += f" {self._episodeTitle}"
+        
+        return name
 
     @staticmethod
     def getPattern() -> re.Pattern:
@@ -59,31 +66,29 @@ class Show(Cinema):
         # matches: Title of a Show; (optional) - More to the Title; S01; E02; (optional) Title of the Episode
         return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ )+?)(- (\w+ )+- |- (\w+ )+|- )?([sS]eason|[sS])? ?"
                           r"(?P<season>\d{1,2})(x|[eE]pisode|[eE]) ?(?P<episode>\d{1,2})( \[?\d{3,4}p.*| - | |$)"
-                          r"(?P<episodeTitle>([!0-9a-zA-Z.',_\-]+( |$))+?||$)(\[?\d{3,4}p|\[|$)")
+                          r"(?P<episodeTitle>([!0-9a-zA-Z.',_\-]+( |$))+?|$)(\[?\d{3,4}p|\[|$)")
+
+    #########
+    # OTHER #
+    #########
 
     def _buildAttributes(self, match: re.Match) -> None:
         self._setTitle(match.group("title"))
-        self._setSeason(match.group("season"))
-        self._setEpisode(match.group("episode"))
+        self._season = match.group("season")
+        self._episode = match.group("episode")
         self._setEpisodeTitle(match.group("episodeTitle"))
+        self._newDir = self._title
 
     def _buildNewFileName(self) -> None:
-        title = self._getTitle()
-        season = self._getSeason()
-        episode = self._getEpisode()
-        episodeTitle = self._getEpisodeTitle()
-        resolution = self._getResolution()
-        encoding = self._getEncoding()
+        title = self._title
+        season = self._season
+        episode = self._episode
+        episodeTitle = self._episodeTitle
 
         newName = f"{title} {season}x{episode}"
 
         if not episodeTitle == "":
             newName += f" {episodeTitle}"
 
-        if resolution:
-            newName += f" [{resolution}]"
-
-        if encoding:
-            newName += f" [x{encoding}]"
-
-        self.setNewFileName(newName)
+        self._newFileName = newName + self._getTags()
+        self._backupName = f"{self._newDir}.{newName + self._fileExt}"

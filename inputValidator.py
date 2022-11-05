@@ -2,11 +2,14 @@ import os
 
 
 class InputValidator:
+    """ Performs simple input validation on passed arguments. Must be an absolute path and exist.
+    Valid files with extension '.pkl', valid files/directories, and all invalid inputs are stored in separate lists. """
 
-    __numErrors: int = 0
     __errorsDict: dict[str, list[str]]
     __cinemaArgs: list[str] = []
     __backupArgs: list[str] = []
+    # __copyFlag: bool = True
+    # __overwriteFlag: bool = True
 
     def hasCinema(self) -> bool:
         return len(self.__cinemaArgs) > 0
@@ -14,16 +17,12 @@ class InputValidator:
     def hasBackup(self) -> bool:
         return len(self.__backupArgs) > 0
 
-    def hasErrors(self) -> bool:
-        return self.__numErrors > 0
-
     def doValidation(self, model: list[str]) -> None:
         """ Validate input by checking the paths to ensure they are both absolute and exist. """
 
         if len(model) == 0:
             raise ValueError("No passed arguments!")
 
-        numErrors = 0
         backupList = []
         cinemaList = []
         pathsNotAbsolute = []
@@ -37,13 +36,11 @@ class InputValidator:
                             backupList.append(path)
                         else:
                             cinemaList.append(path)
-                    else:
+                    else:  # valid directories
                         cinemaList.append(path)
                 else:  # invalid inputs
-                    numErrors += 1
                     pathsNotExist.append(path)
             else:
-                numErrors += 1
                 pathsNotAbsolute.append(path)
 
         if len(cinemaList) == 0 and len(backupList) == 0:
@@ -55,20 +52,18 @@ class InputValidator:
         if len(backupList) > 0:
             self.__backupArgs = backupList
 
-        self.__numErrors = numErrors
-
         errorsDict: dict[str, list[str]] = {}
 
         if len(pathsNotAbsolute) > 0:
             errorsDict["Not Absolute"] = pathsNotAbsolute
 
         if len(pathsNotExist) > 0:
-            errorsDict["Not Exist"] = pathsNotExist
+            errorsDict["Does Not Exist"] = pathsNotExist
 
         self.__errorsDict = errorsDict
 
     def getNumErrors(self) -> int:
-        return self.__numErrors
+        return len(self.__errorsDict)
 
     def getErrorsDict(self) -> dict[str, list[str]]:
         return self.__errorsDict

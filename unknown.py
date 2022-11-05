@@ -11,23 +11,31 @@ class Unknown(Cinema):
         super().__init__(path)
 
         # required params
-        self.setError(error)
+        self._error = error
         self.__isFile = isFile
         self._buildAttributes()
 
         # optional params
-        self._setResolution(None)
-        self._setEncoding(None)
+        self._resolution = None
+        self._encoding = None
 
         # finalize object
         self._buildNewFileName()
-        self._doErrorCheck()
 
-    def parentDir(self) -> str:
+    def updateFileName(self, passed: str) -> None:
+        pass
+
+    def getNewFileNameSimple(self) -> str:
+        pass
+
+    def getNewDir(self) -> None:
+        pass
+
+    def getOldDirPath(self) -> str:
         if self.__isFile:
-            return self._parentDir
+            return self._oldDirPath
         else:
-            return self.getOldAbsPath()
+            return self._oldAbsPath
 
     @staticmethod
     def getPattern() -> re.Pattern:
@@ -37,7 +45,4 @@ class Unknown(Cinema):
         pass
 
     def _buildNewFileName(self):
-        self.setNewFileName("INVALID")
-
-    def _doErrorCheck(self) -> None:
-        pass
+        self._newFileName = "INVALID"

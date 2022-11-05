@@ -5,7 +5,8 @@ import re
 class Movie(Cinema):
     """ A Cinema object specific to movies. """
 
-    __date: str
+    _date: str
+    _isMovie = True
 
     def __init__(self, filePath, specificMatch: re.Match, resolutionMatch: re.Match, encodingMatch: re.Match):
         super().__init__(filePath)
@@ -19,13 +20,24 @@ class Movie(Cinema):
 
         # finalize object
         self._buildNewFileName()
-        self._doErrorCheck()
 
-    def __setDate(self, passed: str) -> None:
-        self.__date = passed
+    ###########
+    # SETTERS #
+    ###########
 
-    def __getDate(self) -> str:
-        return self.__date
+    def updateFileName(self, passed: str) -> None:
+        self._newFileName = passed
+        self._backupName = f"{self._newDir}.{passed + self._fileExt}"
+
+    ###########
+    # GETTERS #
+    ###########
+
+    def getNewFileNameSimple(self) -> str:
+        return f"{self._title} ({self._date})"
+
+    def getNewDir(self) -> str:
+        return self._newFileName
 
     @staticmethod
     def getPattern() -> re.Pattern:
@@ -35,22 +47,20 @@ class Movie(Cinema):
         return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ (- )?)+?)(- (\w+ )+- |(- (\w+ )+)|- )?[([]?"
                           r"(?P<date>\d{4})[]) ]")
 
+    #########
+    # OTHER #
+    #########
+
     def _buildAttributes(self, match: re.Match) -> None:
         self._setTitle(match.group("title"))
-        self.__setDate(match.group("date"))
+        self._date = match.group("date")
 
     def _buildNewFileName(self) -> None:
-        title = self._capitalize(self._getTitle())
-        date = self.__getDate()
-        resolution = self._getResolution()
-        encoding = self._getEncoding()
+        title = self._title
+        date = self._date
 
-        newName = f"{title} ({date})"
+        newName = f"{title} ({date}){self._getTags()}"
 
-        if resolution:
-            newName += f" [{resolution}]"
-
-        if encoding:
-            newName += f" [x{encoding}]"
-
-        self.setNewFileName(newName)
+        self._newFileName = newName
+        self._newDir = newName
+        self._backupName = f"{self._newDir}.{newName + self._fileExt}"

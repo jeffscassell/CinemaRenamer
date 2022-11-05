@@ -11,51 +11,66 @@ class DatabasePickle(Database):
 
     PICKLE_PROTOCOL = 4
     __filePath = os.path.dirname(os.path.abspath(__file__))
-    DIRECTORY = f"{__filePath}\\Cinema Renamer Backups"
+    BACKUP_PATH = f"{__filePath}\\Cinema Renamer Backups"
     EXT = ".pkl"
 
-    def __init__(self):
-        if not os.path.exists(self.DIRECTORY):
-            os.mkdir(self.DIRECTORY)
 
-    def getBackupAbsPath(self) -> str:
-        return os.path.join(os.getcwd(), self.DIRECTORY)
+
+    def __init__(self):
+        if not os.path.exists(self.BACKUP_PATH):
+            os.mkdir(self.BACKUP_PATH)
+
+
+
+    def getBackupsAbsPath(self) -> str:
+        return os.path.join(os.getcwd(), self.BACKUP_PATH)
+
+
 
     def create(self, record: Cinema) -> None:
-        if record.hasError():
-            raise ValueError(record.getError())
+        """ Create new record. If record already exists, an appendment is made to the record name. """
 
-        fileName = record.getNewFileName()
-        fileExt = record.getFileExt()
-
-        with open(f"{self.DIRECTORY}\\{fileName + fileExt}{self.EXT}", "xb") as outp:
+        with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}", "xb") as outp:  # folder.file.ext.pkl | xb, exclusive creation (no overwrite) in binary mode
             pickle.dump(record, outp, self.PICKLE_PROTOCOL)
 
-    def read(self, path: str) -> Cinema:  # throws ValueError, FileNotFoundError
-        try:
-            with open(path, "rb") as inp:  # read bytes
-                return pickle.load(inp)  # raise EOFError with empty input, or _pickle.UnpicklingError with false input
-        except _pickle.UnpicklingError or EOFError:
-            raise ValueError(f"INVALID BACKUP")
 
-    def renameAndCreate(self, record: Cinema) -> None:
-        fileName = record.getNewFileName()
-        fileNameAppend = ""
-        fileExt = record.getFileExt()
 
+    def update(self, record: Cinema) -> None:
+        """ Overwrite an existing record. """
+
+        with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}", "wb") as outp:
+            pickle.dump(record, outp, self.PICKLE_PROTOCOL)
+            
+
+
+    def createAppend(self, record: Cinema) -> None:
+        backupName = record.getBackupName()
+        append = ""
         i = 1
-        while os.path.exists(f"{self.DIRECTORY}\\{fileName + fileNameAppend + fileExt}{self.EXT}"):
 
-            fileNameAppend = f"({i})"
-            record.setNewFileName(fileName + fileNameAppend)
+        while os.path.exists(f"{self.BACKUP_PATH}\\{backupName}{append}{self.EXT}"):  # folder.file.ext(1).pkl
+            append = f"({i})"
             i += 1
-
+        
+        # If the record was appended, update the obj's attribute
+        if append != "":
+            backupName = backupName + append
+            record.setBackupName(backupName)
+        
         self.create(record)
 
-    # def update(self, record: Cinema) -> None:
-    #     pass
+
+
+    def read(self, path: str) -> Cinema:
+        try:
+            with open(path, "rb") as inp:  # read bytes
+                return pickle.load(inp)  # raise EOFError with empty input, or _pickle.UnpicklingError with non-pickle input
+        except _pickle.UnpicklingError:
+            raise ValueError()
+
+
 
     def delete(self, record: Cinema) -> None:  # throws FileNotFoundError
-        fileName = record.getNewFileName() + record.getFileExt()
+        """ Delete backup file from Cinema object. """
 
-        os.remove(f"{self.DIRECTORY}\\{fileName}{self.EXT}")
+        os.remove(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}")

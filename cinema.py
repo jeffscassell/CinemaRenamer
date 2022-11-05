@@ -6,103 +6,162 @@ import os.path
 class Cinema(ABC):
     """ Abstract Cinema class to be superseded by concrete objects. """
 
-    # common attributes
-    _parentDir: str
-    __oldAbsPath: str
-    __oldFileName: str
-    __newFileName: str
-    __fileExt: str
-    __title: str
-    __resolution: str or None
-    __encoding: str or None
-    __error: str or None = None
+    # Required attributes
+    _oldDir: str  # c:\directory\[directory]\file.ext
+    _newDir: str
+    _oldDirPath: str  # [c:\directory\directory]\file.ext
+    _newDirPath: str
+    _oldAbsPath: str  # [c:\directory\directory\file.ext]
+    _oldFileName: str  # c:\directory\directory\[file].ext
+    _newFileName: str
+    _fileExt: str  # .ext
+    _backupName: str  # newParentDirectory.file.ext
+    _isMovie: bool = False
+    _isShow: bool = False
+    _needsIntegration: bool = True
+
+    _title: str
+    _resolution: str or None  # 1080p
+    _encoding: str or None  # 265
+    # _error: str or None = None
 
     def __init__(self, filePath: str):
-        self.__oldAbsPath = filePath
-        self._parentDir = os.path.dirname(filePath)
+        self._oldAbsPath = filePath
+        self._oldDirPath = os.path.dirname(filePath)
+        self._oldDir = os.path.split(self._oldDirPath)[1]
 
         tmp = os.path.splitext(os.path.basename(filePath))
-        self.__oldFileName = tmp[0]
-        self.__fileExt = tmp[1]
+        self._oldFileName = tmp[0]
+        self._fileExt = tmp[1]
 
     ##########
     # CHECKS #
     ##########
 
-    def __isChanged(self) -> bool:
-        return self.getOldFileName() != self.getNewFileName()
+    # def hasError(self) -> bool:
+    #     return self._error is not None
 
-    def hasError(self) -> bool:
-        return self.__error is not None
+    def hasCorrectFileName(self) -> bool:
+        return self._oldFileName == self._newFileName
+    
+    def hasCorrectDirName(self) -> bool:
+        return self._oldDir == self._newDir
+    
+    def needsIntegration(self) -> bool:
+        return self._needsIntegration
+
+    def isMovie(self) -> bool:
+        return self._isMovie
+    
+    def isShow(self) -> bool:
+        return self._isShow
 
     ###########
     # SETTERS #
     ###########
 
-    def setError(self, msg: str) -> None:
-        self.__error = msg
+    # def setError(self, msg: str) -> None:
+    #     self._error = msg
 
-    # def __setAbsPath(self, passed: tuple) -> None:
-    #     self.__absPath = passed
+    @abstractmethod
+    def updateFileName(self, passed: str) -> None:
+        """ Changes the new file name, but also changes the backup name. """
 
-    def setNewFileName(self, passed: str) -> None:
-        self.__newFileName = passed
+    def updateFileNameSimple(self, passed: str) -> None:
+        self.updateFileName(f"{passed}{self._getTags()}")
+
+    def setBackupName(self, passed: str) -> None:
+        self._backupName = passed
+
+    def setNewDirPath(self, passed: str) -> None:
+        self._newDirPath = passed
+
+    def setIntegrationFalse(self) -> None:
+        self._needsIntegration = False
 
     def _setTitle(self, passed: str) -> None:
         """ Set the title of the Cinema object. """
 
-        # self.__title = passed[:-1]  # remove the trailing space that is always attached to the title group
-        self.__title = self._capitalize(passed)
+        # self._title = passed[:-1]  # remove the trailing space that is always attached to the title group
+        self._title = self._capitalize(passed)
 
     def _setResolution(self, match: re.Match or None) -> None:
         """ Set the resolution of the Cinema object (e.g., 1080p). """
 
         if match is None:
-            self.__resolution = None
+            self._resolution = None
         else:
-            self.__resolution = match.group("resolution")
+            self._resolution = match.group("resolution")
 
     def _setEncoding(self, match: re.Match or None) -> None:
         """ Set the encoding of the Cinema object (e.g., H.265). """
 
         if match is None:
-            self.__encoding = None
+            self._encoding = None
         else:
-            self.__encoding = match.group("encoding")
+            self._encoding = match.group("encoding")
 
     ###########
     # GETTERS #
     ###########
 
-    def getError(self) -> str:
-        return self.__error
+    # def getError(self) -> str:
+    #     return self._error
 
-    def parentDir(self):
-        return self._parentDir
+    def getOldDir(self) -> str:  # c:\\[folder]\\name.ext
+        return self._oldDir
 
-    def getOldAbsPath(self) -> str:
-        return self.__oldAbsPath
+    @abstractmethod    
+    def getNewDir(self) -> str:
+        pass
+
+    def getOldDirPath(self) -> str:  # [c:\\folder]\\name.ext
+        return self._oldDirPath
+
+    def getNewDirPath(self) -> str:
+        return self._newDirPath
+
+    def getOldAbsPath(self) -> str:  # [c:\\folder\\name.ext]
+        return self._oldAbsPath
 
     def getNewAbsPath(self) -> str:
-        return f"{self.parentDir()}\\{self.getNewFileName()}{self.getFileExt()}"
+        return f"{self._oldDirPath}\\{self._newFileName}{self._fileExt}"
 
     def getOldFileName(self) -> str:
-        return self.__oldFileName
+        return self._oldFileName
 
     def getNewFileName(self) -> str:
-        return self.__newFileName
+        return self._newFileName
+    
+    @abstractmethod
+    def getNewFileNameSimple(self) -> str:
+        pass
+
+    def getBackupName(self) -> str:  # c:\\[folder.name.ext]
+        return self._backupName
 
     def getFileExt(self) -> str:
-        return self.__fileExt
+        return self._fileExt
 
     def _getTitle(self) -> str:
-        return self.__title
+        return self._title
 
     def _getResolution(self) -> str:
-        return self.__resolution
+        return self._resolution
 
     def _getEncoding(self) -> str:
-        return self.__encoding
+        return self._encoding
+
+    def _getTags(self) -> str:
+        tags = ""
+
+        if self._resolution:
+            tags += f" [{self._resolution}]"
+        
+        if self._encoding:
+            tags += f" [x{self._encoding}]"
+
+        return tags
 
     @staticmethod
     def getResolutionPattern() -> re.Pattern:
@@ -133,29 +192,33 @@ class Cinema(ABC):
     def _buildNewFileName(self) -> None:
         """ Build a new file name based on the filled attributes. """
 
-    def _doErrorCheck(self) -> None:
-        if not self.__isChanged():
-            self.setError("ALREADY CORRECT")
+    @staticmethod
+    def _capitalize(title: str) -> str:
 
-    def _capitalize(self, title: str) -> str:
+        def uppercaseFirstAndLastWordsInTitle() -> None:
+            if numberOfWords > 0:
+                titleWordList[0] = titleWordList[0][:1].upper() + titleWordList[0][1:]
+                titleWordList[-1] = titleWordList[-1][:1].upper() + titleWordList[-1][1:]
+
+        def lowercaseOrUppercaseRelevantWordsInTitle() -> None:
+            i = 1  # skip the first word in the title
+            if numberOfWords > 2:
+                for _ in range(numberOfWords - 2):  # skip the last word in the title
+                    if titleWordList[i].lower() in lowercaseList:
+                        titleWordList[i] = titleWordList[i].lower()
+                    else:
+                        titleWordList[i] = titleWordList[i][:1].upper() + titleWordList[i][1:]
+                    i += 1
+
         articles = ["a", "an", "the"]
-        coordConjunctions = ["for", "and", "nor", "but", "yet"]
-        prepositions = ["at", "by", "of", "to", "on", "with", "without"]
-        lowerList = articles + coordConjunctions + prepositions
+        coordConjunctions = ["for", "and", "but", "yet", "or", "nor", "if", "vs"]
+        prepositions = ["as", "at", "by", "of", "to", "on", "off", "with", "without", "in", "per", "via"]
+        lowercaseList = articles + coordConjunctions + prepositions
 
-        wordList = title.split()
-        numWords = len(wordList)
-        if numWords > 0:
-            wordList[0] = wordList[0][:1].upper() + wordList[0][1:]
-            wordList[-1] = wordList[-1][:1].upper() + wordList[-1][1:]
+        titleWordList = title.split()
+        numberOfWords = len(titleWordList)
 
-        i = 1
-        if numWords > 1:
-            for _ in range(numWords - 1):
-                if wordList[i].lower() in lowerList:
-                    wordList[i] = wordList[i].lower()
-                else:
-                    wordList[i] = wordList[i][:1].upper() + wordList[i][1:]
-                i += 1
+        uppercaseFirstAndLastWordsInTitle()
+        lowercaseOrUppercaseRelevantWordsInTitle()
 
-        return " ".join(wordList)
+        return " ".join(titleWordList)
