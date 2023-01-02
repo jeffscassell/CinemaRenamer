@@ -27,7 +27,8 @@ class Movie(Cinema):
 
     def updateFileName(self, passed: str) -> None:
         self._newFileName = passed
-        self._backupName = f"{self._newDir}.{passed + self._fileExt}"
+        self._backupName = f"{self._newDirectory}.{passed + self._fileExtension}"
+        # TODO need to re-parse string to pull out updated title and update it
 
     ###########
     # GETTERS #
@@ -36,7 +37,7 @@ class Movie(Cinema):
     def getNewFileNameSimple(self) -> str:
         return f"{self._title} ({self._date})"
 
-    def getNewDir(self) -> str:
+    def getNewDirectory(self) -> str:
         return self._newFileName
 
     @staticmethod
@@ -62,5 +63,5 @@ class Movie(Cinema):
         newName = f"{title} ({date}){self._getTags()}"
 
         self._newFileName = newName
-        self._newDir = newName
-        self._backupName = f"{self._newDir}.{newName + self._fileExt}"
+        self._newDirectory = newName
+        self._backupName = f"{self._newDirectory}.{newName + self._fileExtension}"

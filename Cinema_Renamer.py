@@ -28,6 +28,9 @@ API_KEY = "8eac7bdc5eac6879ab8c8a97848f0e74"  # TMDB
 
 def main():
     c = Controller(argv[1:], ViewCLI())
+    # TODO load settings
+    # TODO validate settings; error flag will either be set or not
+    # TODO pass settings to controller and continue; error handling/reporting should be done by View
     c.start()
 
 

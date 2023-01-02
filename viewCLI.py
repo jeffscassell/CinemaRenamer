@@ -42,6 +42,7 @@ class ViewCLI(View):
             self.controller.validate(model)
         except ValueError as e:
             print("[FAIL]\n")
+            print("I'M ON THE DEV BRANCH!\n")
             print(f"{e}\n"
                   "At least a single absolute path for a file or directory is required for processing.\n\n"
                   "Files:       Can be cinema files or backups.\n"
@@ -77,7 +78,7 @@ class ViewCLI(View):
             print(f"[{validationErrors} ERROR(S)]\n")
             
             # Print validation errors
-            errorsDict = self.controller.getValidationErrorDict()
+            errorsDict = self.controller.getValidationErrorDictionary()
             for error, errorPathList in errorsDict.items():
                 for path in errorPathList:
                     print(f"{error}: {path}")
@@ -89,13 +90,13 @@ class ViewCLI(View):
 
     def __loadConfigurationSettings(self) -> None:
 
-        def tryReadLibrary(passed: str) -> str:
+        def tryReadingLibrary(passed: str) -> str:
             try:
                 return config.get("libraries", passed, raw=True)  # Raw removes the need to surround the directory in quotes to handle spaces
             except Exception:
                 pass
         
-        def tryReadFlag(passed: str) -> bool:
+        def tryReadingFlag(passed: str) -> bool:
             try:
                 return config.getboolean("flags", passed)
             except Exception:
@@ -109,12 +110,12 @@ class ViewCLI(View):
                 config.read(configFile)
 
                 # Libraries
-                self.moviesDir = tryReadLibrary("movies")
-                self.showsDir = tryReadLibrary("shows")
+                self.moviesDir = tryReadingLibrary("movies")
+                self.showsDir = tryReadingLibrary("shows")
 
                 # Flags
-                self.copyFlag = tryReadFlag("copy")
-                self.overwriteFlag = tryReadFlag("overwrite")
+                self.copyFlag = tryReadingFlag("copy")
+                self.overwriteFlag = tryReadingFlag("overwrite")
         else:  # Create empty config file
             config.add_section("libraries")
             config.set("libraries", "shows", "")
@@ -141,7 +142,7 @@ class ViewCLI(View):
         if len(unknownCinemaList) > 0:
             self.__printHeader(f"removed {len(unknownCinemaList)} unrecognized file(s)")
             for obj in unknownCinemaList:
-                print(f"    -> {obj.getOldAbsPath()}")
+                print(f"    -> {obj.getOldAbsolutePath()}")
             print()
 
         # Process Error List
@@ -153,8 +154,8 @@ class ViewCLI(View):
         if len(alreadyCorrectCinemaList) > 0:
             # Check for false-positives due to the file having the correct directory name, but not being in the library, and re-add them to cinemaList
             for obj in alreadyCorrectCinemaList[:]:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDir()}" == obj.getOldDirPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDir()}" == obj.getOldDirPath()
+                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
+                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
                 if not alreadyInMovieLib and not alreadyInShowLib:
                     alreadyCorrectCinemaList.remove(obj)
                     cinemaList.append(obj)
@@ -168,8 +169,8 @@ class ViewCLI(View):
         if len(cinemaList) > 0:
             # Check if objs are already in library and disable integration if so
             for obj in cinemaList:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDir()}" == obj.getOldDirPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDir()}" == obj.getOldDirPath()
+                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
+                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
                 if alreadyInMovieLib or alreadyInShowLib:
                     obj.setIntegrationFalse()
 
@@ -326,7 +327,7 @@ class ViewCLI(View):
         #             try:
         #                 self.controller.rename(obj)
         #             except Exception as e:
-        #                 errorList += f"{str(e)}: {obj.getNewFileName() + obj.getFileExt()}"
+        #                 errorList += f"{str(e)}: {obj.getNewFileName() + obj.getFileExtension()}"
         #                 self.controller.deleteBackup(obj)
 
         errorList = []
@@ -345,11 +346,11 @@ class ViewCLI(View):
                             raise FileNotFoundError("NO MATCHING LIBRARY FOR CINEMA TYPE")
                     except FileNotFoundError as e:
                         self.fail()
-                        errorList += f"{str(e)}: {obj.getNewFileName() + obj.getFileExt()}"
+                        errorList += f"{str(e)}: {obj.getNewFileName() + obj.getFileExtension()}"
                         self.controller.deleteBackup(obj)
                     except FileExistsError as e:
                         self.fail()
-                        errorList.append(f"{str(e)}: {obj.getNewFileName()}{obj.getFileExt}")
+                        errorList.append(f"{str(e)}: {obj.getNewFileName()}{obj.getFileExtension}")
                         cinemaList.remove(obj)
                         self.controller.deleteBackup(obj)
                     except Exception as e:
@@ -425,8 +426,8 @@ class ViewCLI(View):
         def printCinemaList() -> None:
             i = 1
             for obj in cinemaList:
-                print(f" {i:>3d}: {obj.getNewFileName()}{obj.getFileExt()}\n"
-                      f"   -> {obj.getOldFileName()}{obj.getFileExt()}\n")
+                print(f" {i:>3d}: {obj.getNewFileName()}{obj.getFileExtension()}\n"
+                      f"   -> {obj.getOldFileName()}{obj.getFileExtension()}\n")
                 i += 1
 
             print()
@@ -562,16 +563,16 @@ class ViewCLI(View):
         #              ! NEEDS TO BE INTEGRATED INTO LIBRARY
 
         def printCinema() -> None:
-            print(f"  {i:>3d} - {obj.getOldFileName()}{obj.getFileExt()}")  # 5 spaces to actual text starting, 2 spaces + 2 padding + 1 index start
+            print(f"  {i:>3d} - {obj.getOldFileName()}{obj.getFileExtension()}")  # 5 spaces to actual text starting, 2 spaces + 2 padding + 1 index start
             if obj.hasCorrectFileName() and not obj.hasCorrectDirName():
                 print(f"             ! FILE CORRECT, DIRECTORY WILL BE RENAMED")
             elif obj.hasCorrectFileName() and obj.hasCorrectDirName():
                 print(f"             ! NEEDS TO BE INTEGRATED INTO LIBRARY")
             else:
-                print(f"        {obj.getNewFileName()}{obj.getFileExt()}")
+                print(f"        {obj.getNewFileName()}{obj.getFileExtension()}")
 
         # def printErrorCinema() -> None:
-        #     print(f"    - {obj.getOldFileName()}{obj.getFileExt()}")  # 5 spaces to actual text
+        #     print(f"    - {obj.getOldFileName()}{obj.getFileExtension()}")  # 5 spaces to actual text
         #     print(f"      [!]     {obj.getError()}")
 
         i = 0

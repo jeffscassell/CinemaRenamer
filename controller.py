@@ -1,18 +1,18 @@
 from cinema import Cinema
 from view import View
-from parser import Parser
+from cinemaParser import CinemaParser
 from fileHandler import FileHandler
 from databasePickle import DatabasePickle
 from inputValidator import InputValidator
 
 
-# todo make into package(s)
+# TODO make into package(s)
 
 
 class Controller:
     """ The controller in the MVC architecture. """
 
-    __parser = Parser()
+    __parser = CinemaParser()
     __database = DatabasePickle()
     __handler = FileHandler(__database)
     __validator = InputValidator()
@@ -91,7 +91,7 @@ class Controller:
     def getValidationNumErrors(self) -> int:
         return self.__validator.getNumErrors()
 
-    def getValidationErrorDict(self) -> dict[str, list[str]]:
+    def getValidationErrorDictionary(self) -> dict[str, list[str]]:
         return self.__validator.getErrorsDict()
 
     def hasValidatedCinemaArgs(self) -> bool:

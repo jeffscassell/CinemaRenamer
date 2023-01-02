@@ -29,7 +29,8 @@ class Show(Cinema):
 
     def updateFileName(self, passed: str) -> None:
         self._newFileName = passed
-        self._backupName = f"{self._newDir}.{passed + self._fileExt}"
+        self._backupName = f"{self._newDirectory}.{passed + self._fileExtension}"
+        # self._newDirectory = self.get
 
     def _setEpisodeTitle(self, passed: str) -> None:
         # if len(passed) > 0:
@@ -48,7 +49,7 @@ class Show(Cinema):
     # GETTERS #
     ###########
     
-    def getNewDir(self) -> str:
+    def getNewDirectory(self) -> str:
         return self._title
     
     def getNewFileNameSimple(self) -> str:
@@ -77,7 +78,7 @@ class Show(Cinema):
         self._season = match.group("season")
         self._episode = match.group("episode")
         self._setEpisodeTitle(match.group("episodeTitle"))
-        self._newDir = self._title
+        self._newDirectory = self._title
 
     def _buildNewFileName(self) -> None:
         title = self._title
@@ -91,4 +92,4 @@ class Show(Cinema):
             newName += f" {episodeTitle}"
 
         self._newFileName = newName + self._getTags()
-        self._backupName = f"{self._newDir}.{newName + self._fileExt}"
+        self._backupName = f"{self._newDirectory}.{newName + self._fileExtension}"

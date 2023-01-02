@@ -28,14 +28,14 @@ class Unknown(Cinema):
     def getNewFileNameSimple(self) -> str:
         pass
 
-    def getNewDir(self) -> None:
+    def getNewDirectory(self) -> None:
         pass
 
     def getOldDirPath(self) -> str:
         if self.__isFile:
-            return self._oldDirPath
+            return self._oldDirectoryPath
         else:
-            return self._oldAbsPath
+            return self._oldAbsolutePath
 
     @staticmethod
     def getPattern() -> re.Pattern:

@@ -12,7 +12,7 @@ class ClassPatternsEmpty(Exception):
     pass
 
 
-class Parser:
+class CinemaParser:
     """ Parses passed path strings for relevant Cinema objects by matching against Cinema patterns. """
 
     __patternDict: dict[re.Pattern, object]  # {pattern: class, ...}
