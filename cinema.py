@@ -44,7 +44,7 @@ class Cinema(ABC):
     def hasCorrectFileName(self) -> bool:
         return self._oldFileName == self._newFileName
     
-    def hasCorrectDirName(self) -> bool:
+    def hasCorrectDirectoryName(self) -> bool:
         return self._oldDirectory == self._newDirectory
     
     def needsIntegration(self) -> bool:
@@ -73,7 +73,7 @@ class Cinema(ABC):
     def setBackupName(self, passed: str) -> None:
         self._backupName = passed
 
-    def setNewDirPath(self, passed: str) -> None:
+    def setNewDirectoryPath(self, passed: str) -> None:
         self._newDirectoryPath = passed
 
     def setIntegrationFalse(self) -> None:
@@ -115,16 +115,16 @@ class Cinema(ABC):
     def getNewDirectory(self) -> str:
         pass
 
-    def getOldDirPath(self) -> str:  # [c:\\folder]\\name.ext
+    def getOldDirectoryPath(self) -> str:  # [c:\\folder]\\name.ext
         return self._oldDirectoryPath
 
-    def getNewDirPath(self) -> str:
+    def getNewDirectoryPath(self) -> str:
         return self._newDirectoryPath
 
     def getOldAbsolutePath(self) -> str:  # [c:\\folder\\name.ext]
         return self._oldAbsolutePath
 
-    def getNewAbsPath(self) -> str:
+    def getNewAbsolutePath(self) -> str:
         return f"{self._oldDirectoryPath}\\{self._newFileName}{self._fileExtension}"
 
     def getOldFileName(self) -> str:

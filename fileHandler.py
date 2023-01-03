@@ -82,7 +82,7 @@ class FileHandler:
                 else:
                     raise FileExistsError("OLD AND NEW DIRECTORIES BOTH EXIST")
 
-            obj.setNewDirPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
         elif newDirectoryExistsInLibrary:
@@ -98,7 +98,7 @@ class FileHandler:
                     else:
                         shutil.move(oldAbsolutePath, newAbsolutePathInLibrary)
 
-            obj.setNewDirPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
         else:  # The object is not in the library and the directory doesn't exist
@@ -121,7 +121,7 @@ class FileHandler:
                 else:
                     shutil.move(oldAbsolutePath, newAbsolutePathInLibrary)
 
-            obj.setNewDirPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
 
@@ -135,8 +135,8 @@ class FileHandler:
     def rename(self, cinema: Cinema) -> None:
         """ The Cinema object's file is not being integrated into a library and just needs renaming in the OS. """
 
-        cinema.setNewDirPath(cinema.getOldDirectory())
-        os.replace(cinema.getOldAbsolutePath(), cinema.getNewAbsPath())  # what exceptions does this possibly throw? FileNotFoundError?
+        cinema.setNewDirectoryPath(cinema.getOldDirectory())
+        os.replace(cinema.getOldAbsolutePath(), cinema.getNewAbsolutePath())  # what exceptions does this possibly throw? FileNotFoundError?
         self.backupOverwrite(cinema)
 
 
@@ -151,7 +151,7 @@ class FileHandler:
     def restoreBackupObj(self, cinema: Cinema) -> None:
         """ Restore a Cinema object's file name. """
 
-        os.replace(cinema.getNewAbsPath(), f"{cinema.getNewDirPath()}\\{cinema.getOldFileName()}{cinema.getFileExtension()}")
+        os.replace(cinema.getNewAbsolutePath(), f"{cinema.getNewDirectoryPath()}\\{cinema.getOldFileName()}{cinema.getFileExtension()}")
         self.__database.delete(cinema)
 
 
@@ -159,6 +159,6 @@ class FileHandler:
     # def restoreBackupObj(self, obj: Cinema) -> None:  # throws ValueError, FileNotFoundError
     #     """ Restore a Cinema file from a backup file path. """
 
-    #     os.replace(obj.getNewAbsPath(), obj.getOldAbsolutePath())
+    #     os.replace(obj.getNewAbsolutePath(), obj.getOldAbsolutePath())
 
     #     self.__database.delete(obj)

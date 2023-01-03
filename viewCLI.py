@@ -20,7 +20,6 @@ class ViewCLI(View):
         self.controller = controller
 
         self.__validateInput(model)
-
         self.__loadConfigurationSettings()
 
         if self.controller.hasValidatedCinemaArgs():
@@ -42,7 +41,6 @@ class ViewCLI(View):
             self.controller.validate(model)
         except ValueError as e:
             print("[FAIL]\n")
-            print("I'M ON THE DEV BRANCH!\n")
             print(f"{e}\n"
                   "At least a single absolute path for a file or directory is required for processing.\n\n"
                   "Files:       Can be cinema files or backups.\n"
@@ -154,8 +152,8 @@ class ViewCLI(View):
         if len(alreadyCorrectCinemaList) > 0:
             # Check for false-positives due to the file having the correct directory name, but not being in the library, and re-add them to cinemaList
             for obj in alreadyCorrectCinemaList[:]:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
+                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
+                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
                 if not alreadyInMovieLib and not alreadyInShowLib:
                     alreadyCorrectCinemaList.remove(obj)
                     cinemaList.append(obj)
@@ -169,8 +167,8 @@ class ViewCLI(View):
         if len(cinemaList) > 0:
             # Check if objs are already in library and disable integration if so
             for obj in cinemaList:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirPath()
+                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
+                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
                 if alreadyInMovieLib or alreadyInShowLib:
                     obj.setIntegrationFalse()
 
@@ -539,13 +537,13 @@ class ViewCLI(View):
         currentDirPath = ""
         fileCount = 0
         for obj in cinemaList:
-            if currentDirPath == obj.getOldDirPath():
+            if currentDirPath == obj.getOldDirectoryPath():
                 fileCount += 1
             else:
                 if fileCount != 0:
                     printCount()
 
-                currentDirPath = obj.getOldDirPath()
+                currentDirPath = obj.getOldDirectoryPath()
                 print(currentDirPath)
                 fileCount = 1
 
@@ -564,9 +562,9 @@ class ViewCLI(View):
 
         def printCinema() -> None:
             print(f"  {i:>3d} - {obj.getOldFileName()}{obj.getFileExtension()}")  # 5 spaces to actual text starting, 2 spaces + 2 padding + 1 index start
-            if obj.hasCorrectFileName() and not obj.hasCorrectDirName():
+            if obj.hasCorrectFileName() and not obj.hasCorrectDirectoryName():
                 print(f"             ! FILE CORRECT, DIRECTORY WILL BE RENAMED")
-            elif obj.hasCorrectFileName() and obj.hasCorrectDirName():
+            elif obj.hasCorrectFileName() and obj.hasCorrectDirectoryName():
                 print(f"             ! NEEDS TO BE INTEGRATED INTO LIBRARY")
             else:
                 print(f"        {obj.getNewFileName()}{obj.getFileExtension()}")
@@ -579,7 +577,7 @@ class ViewCLI(View):
         currentDirPath = ""
 
         for obj in cinemaList:
-            if currentDirPath == obj.getOldDirPath():
+            if currentDirPath == obj.getOldDirectoryPath():
                 # if obj.hasError():
                 #     printErrorCinema()
                 # else:
@@ -588,7 +586,7 @@ class ViewCLI(View):
                 # print()
             else:
                 print()
-                currentDirPath = obj.getOldDirPath()
+                currentDirPath = obj.getOldDirectoryPath()
                 print(currentDirPath)
 
                 # if obj.hasError():
