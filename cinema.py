@@ -9,8 +9,8 @@ class Cinema(ABC):
     # Required attributes
     _oldDirectory: str  # c:\directory\[directory]\file.ext
     _newDirectory: str
-    _oldDirectoryPath: str  # [c:\directory\directory]\file.ext
-    _newDirectoryPath: str
+    _oldDirectoryAbsolutePath: str  # [c:\directory\directory]\file.ext
+    _newDirectoryAbsolutePath: str
     _oldAbsolutePath: str  # [c:\directory\directory\file.ext]
     _oldFileName: str  # c:\directory\directory\[file].ext
     _newFileName: str
@@ -25,12 +25,12 @@ class Cinema(ABC):
     _encoding: str or None  # 265
     # _error: str or None = None
 
-    def __init__(self, filePath: str):
-        self._oldAbsolutePath = filePath
-        self._oldDirectoryPath = os.path.dirname(filePath)
-        self._oldDirectory = os.path.split(self._oldDirectoryPath)[1]
+    def __init__(self, passedAbsolutePath: str):
+        self._oldAbsolutePath = passedAbsolutePath
+        self._oldDirectoryAbsolutePath = os.path.dirname(passedAbsolutePath)
+        self._oldDirectory = os.path.split(self._oldDirectoryAbsolutePath)[1]
 
-        tmp = os.path.splitext(os.path.basename(filePath))
+        tmp = os.path.splitext(os.path.basename(passedAbsolutePath))
         self._oldFileName = tmp[0]
         self._fileExtension = tmp[1]
 
@@ -73,10 +73,12 @@ class Cinema(ABC):
     def setBackupName(self, passed: str) -> None:
         self._backupName = passed
 
-    def setNewDirectoryPath(self, passed: str) -> None:
-        self._newDirectoryPath = passed
+    def setNewDirectoryAbsolutePath(self, passed: str) -> None:
+        self._newDirectoryAbsolutePath = passed
 
     def setIntegrationFalse(self) -> None:
+        """ Sets the Integration flag to false, indicating that the file does not need to be integrated into its associated library. """
+        
         self._needsIntegration = False
 
     def _setTitle(self, passed: str) -> None:
@@ -115,17 +117,17 @@ class Cinema(ABC):
     def getNewDirectory(self) -> str:
         pass
 
-    def getOldDirectoryPath(self) -> str:  # [c:\\folder]\\name.ext
-        return self._oldDirectoryPath
+    def getOldDirectoryAbsolutePath(self) -> str:  # [c:\\folder]\\name.ext
+        return self._oldDirectoryAbsolutePath
 
-    def getNewDirectoryPath(self) -> str:
-        return self._newDirectoryPath
+    def getNewDirectoryAbsolutePath(self) -> str:
+        return self._newDirectoryAbsolutePath
 
     def getOldAbsolutePath(self) -> str:  # [c:\\folder\\name.ext]
         return self._oldAbsolutePath
 
     def getNewAbsolutePath(self) -> str:
-        return f"{self._oldDirectoryPath}\\{self._newFileName}{self._fileExtension}"
+        return f"{self._oldDirectoryAbsolutePath}\\{self._newFileName}{self._fileExtension}"
 
     def getOldFileName(self) -> str:
         return self._oldFileName

@@ -29,7 +29,7 @@ class FileHandler:
 
 
     def backupAppend(self, obj: Cinema) -> None:
-        """ Append to (instead of overwriting) an existing record. """
+        """ Append to (instead of overwriting) an existing database record. """
 
         self.__database.createAppend(obj)
 
@@ -82,7 +82,7 @@ class FileHandler:
                 else:
                     raise FileExistsError("OLD AND NEW DIRECTORIES BOTH EXIST")
 
-            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryAbsolutePath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
         elif newDirectoryExistsInLibrary:
@@ -98,7 +98,7 @@ class FileHandler:
                     else:
                         shutil.move(oldAbsolutePath, newAbsolutePathInLibrary)
 
-            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryAbsolutePath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
         else:  # The object is not in the library and the directory doesn't exist
@@ -121,7 +121,7 @@ class FileHandler:
                 else:
                     shutil.move(oldAbsolutePath, newAbsolutePathInLibrary)
 
-            obj.setNewDirectoryPath(libraryPathAndNewDirectory)
+            obj.setNewDirectoryAbsolutePath(libraryPathAndNewDirectory)
             self.backupOverwrite(obj)
 
 
@@ -135,7 +135,7 @@ class FileHandler:
     def rename(self, cinema: Cinema) -> None:
         """ The Cinema object's file is not being integrated into a library and just needs renaming in the OS. """
 
-        cinema.setNewDirectoryPath(cinema.getOldDirectory())
+        cinema.setNewDirectoryAbsolutePath(cinema.getOldDirectory())
         os.replace(cinema.getOldAbsolutePath(), cinema.getNewAbsolutePath())  # what exceptions does this possibly throw? FileNotFoundError?
         self.backupOverwrite(cinema)
 
@@ -151,7 +151,7 @@ class FileHandler:
     def restoreBackupObj(self, cinema: Cinema) -> None:
         """ Restore a Cinema object's file name. """
 
-        os.replace(cinema.getNewAbsolutePath(), f"{cinema.getNewDirectoryPath()}\\{cinema.getOldFileName()}{cinema.getFileExtension()}")
+        os.replace(cinema.getNewAbsolutePath(), f"{cinema.getNewDirectoryAbsolutePath()}\\{cinema.getOldFileName()}{cinema.getFileExtension()}")
         self.__database.delete(cinema)
 
 

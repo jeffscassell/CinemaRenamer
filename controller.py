@@ -81,6 +81,9 @@ class Controller:
     def restoreBackupObj(self, obj: str) -> None:
         self.__handler.restoreBackupObj(obj)
 
+    def buildLibraries(self) -> None:
+        pass
+
     #############
     # VALIDATOR #
     #############

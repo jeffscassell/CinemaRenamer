@@ -10,8 +10,8 @@ class ViewCLI(View):
     """ The terminal interface for Cinema Renamer. """
 
     controller: Controller
-    moviesDir: str = ""
-    showsDir: str = ""
+    movieLibraryDirectory: str = ""
+    showLibraryDirectory: str = ""
     copyFlag: bool = True
     overwriteFlag: bool = True
 
@@ -108,8 +108,8 @@ class ViewCLI(View):
                 config.read(configFile)
 
                 # Libraries
-                self.moviesDir = tryReadingLibrary("movies")
-                self.showsDir = tryReadingLibrary("shows")
+                self.movieLibraryDirectory = tryReadingLibrary("movies")
+                self.showLibraryDirectory = tryReadingLibrary("shows")
 
                 # Flags
                 self.copyFlag = tryReadingFlag("copy")
@@ -152,8 +152,8 @@ class ViewCLI(View):
         if len(alreadyCorrectCinemaList) > 0:
             # Check for false-positives due to the file having the correct directory name, but not being in the library, and re-add them to cinemaList
             for obj in alreadyCorrectCinemaList[:]:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
+                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{obj.getNewDirectory()}" == obj.getOldDirectoryAbsolutePath()
+                alreadyInShowLib = f"{self.showLibraryDirectory}\\{obj.getNewDirectory()}" == obj.getOldDirectoryAbsolutePath()
                 if not alreadyInMovieLib and not alreadyInShowLib:
                     alreadyCorrectCinemaList.remove(obj)
                     cinemaList.append(obj)
@@ -167,8 +167,8 @@ class ViewCLI(View):
         if len(cinemaList) > 0:
             # Check if objs are already in library and disable integration if so
             for obj in cinemaList:
-                alreadyInMovieLib = f"{self.moviesDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
-                alreadyInShowLib = f"{self.showsDir}\\{obj.getNewDirectory()}" == obj.getOldDirectoryPath()
+                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{obj.getNewDirectory()}" == obj.getOldDirectoryAbsolutePath()
+                alreadyInShowLib = f"{self.showLibraryDirectory}\\{obj.getNewDirectory()}" == obj.getOldDirectoryAbsolutePath()
                 if alreadyInMovieLib or alreadyInShowLib:
                     obj.setIntegrationFalse()
 
@@ -330,15 +330,15 @@ class ViewCLI(View):
 
         errorList = []
 
-        if os.path.exists(self.moviesDir) and os.path.isdir(self.moviesDir) and os.path.exists(self.showsDir) and os.path.isdir(self.showsDir):
+        if os.path.exists(self.movieLibraryDirectory) and os.path.isdir(self.movieLibraryDirectory) and os.path.exists(self.showLibraryDirectory) and os.path.isdir(self.showLibraryDirectory):
             for obj in cinemaList[:]:
                 if obj.needsIntegration():
                     try:
                         if obj.isMovie():
-                            self.controller.integrateIntoLibrary(obj, self.moviesDir, self.copyFlag, self.overwriteFlag)
+                            self.controller.integrateIntoLibrary(obj, self.movieLibraryDirectory, self.copyFlag, self.overwriteFlag)
                             self.passed()
                         elif obj.isShow():
-                            self.controller.integrateIntoLibrary(obj, self.showsDir, self.copyFlag, self.overwriteFlag)
+                            self.controller.integrateIntoLibrary(obj, self.showLibraryDirectory, self.copyFlag, self.overwriteFlag)
                             self.passed()
                         else:
                             raise FileNotFoundError("NO MATCHING LIBRARY FOR CINEMA TYPE")
@@ -373,14 +373,14 @@ class ViewCLI(View):
         else:
             # Print error if missing at least 1 library directory
             print("MOVIES LIBRARY DIRECTORY: ", end="")
-            if self.moviesDir:
-                print(f"{self.moviesDir}")
+            if self.movieLibraryDirectory:
+                print(f"{self.movieLibraryDirectory}")
             else:
                 print("[MISSING]")
             
             print("SHOWS LIBRARY DIRECTORY: ", end="")
-            if self.showsDir:
-                print(f"{self.showsDir}")
+            if self.showLibraryDirectory:
+                print(f"{self.showLibraryDirectory}")
             else:
                 print("[MISSING]")
             
@@ -537,13 +537,13 @@ class ViewCLI(View):
         currentDirPath = ""
         fileCount = 0
         for obj in cinemaList:
-            if currentDirPath == obj.getOldDirectoryPath():
+            if currentDirPath == obj.getOldDirectoryAbsolutePath():
                 fileCount += 1
             else:
                 if fileCount != 0:
                     printCount()
 
-                currentDirPath = obj.getOldDirectoryPath()
+                currentDirPath = obj.getOldDirectoryAbsolutePath()
                 print(currentDirPath)
                 fileCount = 1
 
@@ -577,7 +577,7 @@ class ViewCLI(View):
         currentDirPath = ""
 
         for obj in cinemaList:
-            if currentDirPath == obj.getOldDirectoryPath():
+            if currentDirPath == obj.getOldDirectoryAbsolutePath():
                 # if obj.hasError():
                 #     printErrorCinema()
                 # else:
@@ -586,7 +586,7 @@ class ViewCLI(View):
                 # print()
             else:
                 print()
-                currentDirPath = obj.getOldDirectoryPath()
+                currentDirPath = obj.getOldDirectoryAbsolutePath()
                 print(currentDirPath)
 
                 # if obj.hasError():

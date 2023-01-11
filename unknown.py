@@ -31,7 +31,7 @@ class Unknown(Cinema):
     def getNewDirectory(self) -> None:
         pass
 
-    def getOldDirectoryPath(self) -> str:
+    def getOldDirectoryAbsolutePath(self) -> str:
         if self.__isFile:
             return self._oldDirectoryPath
         else:

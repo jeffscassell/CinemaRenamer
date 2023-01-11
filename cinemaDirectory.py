@@ -1,6 +1,12 @@
-import cinema
+from abc import ABC, abstractmethod
+from cinema import Cinema
 
-class CinemaDirectory:
+
+class CinemaDirectory(ABC):
     """ Container for Cinema objects. """
 
-    pass
+    __name: str
+    __tags: str
+    __cinemaList: list[Cinema]
+    __libraryName: str
+    __libraryDirectory: str

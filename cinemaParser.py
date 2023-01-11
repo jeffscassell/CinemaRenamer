@@ -15,22 +15,29 @@ class ClassPatternsEmpty(Exception):
 class CinemaParser:
     """ Parses passed path strings for relevant Cinema objects by matching against Cinema patterns. """
 
+    # Concrete objects patterns
     __patternDictionary: dict[re.Pattern, object]  # {pattern: class, ...}
+
+    # Common patterns
     __resolutionPattern: re.Pattern
     __encodingPattern: re.Pattern
-    __spacingPattern: re.Pattern
+
+    # Corrected file name patterns
+    __dotsOrUnderscoresPattern: re.Pattern
     __doubleSpacesPattern: re.Pattern
     __missingSpacesPattern: re.Pattern
     __beginningTagsPattern: re.Pattern
 
+    # Outputted Lists
     __unprocessedCinemaList: list[Cinema]
+    __unprocessedCinemaDirectoryList: list[CinemaDirectory]
     __unknownCinemaList: list[Unknown]
     __alreadyCorrectCinemaList: list[Cinema]
     # __errorCinemaList: list[Cinema]
     __processedCinemaList: list[Cinema]
 
     def __init__(self):
-        self.__buildPatterns()
+        self.__buildRecognizedPatterns()
 
     ###########
     # GETTERS #
@@ -112,18 +119,18 @@ class CinemaParser:
     def _createCinemaObject(self, passed: str) -> Cinema:
         """ Parse a single file path and return a single Cinema object. """
 
-        absPath = os.path.split(passed)
-        temp = os.path.splitext(absPath[1])  # file name
-        fileName = temp[0]  # file name without extension
+        passedAbsolutePathPlusFile = os.path.split(passed)
+        fileNamePlusExtension = os.path.splitext(passedAbsolutePathPlusFile[1])  # extracting the file name plus extension
+        fileName = fileNamePlusExtension[0]  # file name without extension
 
-        cleaned = self.__getCleanFileName(fileName)
+        correctedFileName = self.__getCorrectedFileName(fileName)
 
         for pattern, subclass in self.__getPatternDictionary().items():
-            patternMatchFound = pattern.search(cleaned)
+            patternMatchFound = pattern.search(correctedFileName)  # Unknown Cinema has no Pattern and will return no match for a search
 
             if patternMatchFound:
-                resolutionMatch = self.__resolutionPattern.search(cleaned)
-                encodingMatch = self.__encodingPattern.search(cleaned)
+                resolutionMatch = self.__resolutionPattern.search(correctedFileName)
+                encodingMatch = self.__encodingPattern.search(correctedFileName)
 
                 return subclass(passed, patternMatchFound, resolutionMatch, encodingMatch)
 
@@ -151,12 +158,12 @@ class CinemaParser:
         else:
             return returnList
 
-    def __getCleanFileName(self, path: str) -> str:
+    def __getCorrectedFileName(self, path: str) -> str:
         """ Process the original file name and return a cleaned string for continued processing. """
 
         # replace . and _ with space
         # .'s that aren't preceded by a capital letter (F.B.I.)
-        cleanFileName = re.sub(self.__spacingPattern, " ", path)
+        cleanFileName = re.sub(self.__dotsOrUnderscoresPattern, " ", path)
 
         # remove any double spaces (or more)
         cleanFileName = re.sub(self.__doubleSpacesPattern, " ", cleanFileName)
@@ -172,11 +179,11 @@ class CinemaParser:
     def __getPatternDictionary(self) -> dict:
         return self.__patternDictionary
 
-    def __buildPatterns(self) -> None:
+    def __buildRecognizedPatterns(self) -> None:
         """ Build's the CinemaParser's required Pattern objects from the Cinema base class and its subclasses. """
 
         self.__buildConcretePatternList()
-        self.__buildStandardPatterns()
+        self.__buildCommonPatterns()
 
     def __buildConcretePatternList(self) -> None:
         """ Build the concrete Cinema object pattern list from the Cinema subclasses. """
@@ -193,13 +200,13 @@ class CinemaParser:
 
         self.__patternDictionary = patternDictionary
 
-    def __buildStandardPatterns(self) -> None:
+    def __buildCommonPatterns(self) -> None:
         """ Build the common patterns from the Cinema base class. """
 
         self.__resolutionPattern = re.compile(Cinema.getResolutionPattern())
         self.__encodingPattern = re.compile(Cinema.getEncodingPattern())
 
-        self.__spacingPattern = re.compile(r"((?<![A-Z])\.|\.(?=[A-Z][a-z])|\.(?=[0-9])|_)")
+        self.__dotsOrUnderscoresPattern = re.compile(r"((?<![A-Z])\.|\.(?=[A-Z][a-z])|\.(?=[0-9])|_)")
         self.__doubleSpacesPattern = re.compile(r" {2,}")
         self.__missingSpacesPattern = re.compile(r"((\w)([([])|([])])(\w))")
         self.__beginningTagsPattern = re.compile(r"^\[.+?] ?")
