@@ -1,4 +1,4 @@
-import _pickle
+# import _pickle
 
 from database import Database
 from cinema import Cinema
@@ -12,7 +12,7 @@ class DatabasePickle(Database):
     PICKLE_PROTOCOL = 4
     __filePath = os.path.dirname(os.path.abspath(__file__))
     BACKUP_PATH = f"{__filePath}\\Cinema Renamer Backups"
-    EXT = ".pkl"
+    EXT = ".backup"
 
 
 
@@ -65,7 +65,7 @@ class DatabasePickle(Database):
         try:
             with open(path, "rb") as inp:  # read bytes
                 return pickle.load(inp)  # raise EOFError with empty input, or _pickle.UnpicklingError with non-pickle input
-        except _pickle.UnpicklingError:
+        except pickle.UnpicklingError:
             raise ValueError()
 
 

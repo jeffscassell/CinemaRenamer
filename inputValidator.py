@@ -3,7 +3,7 @@ import os
 
 class InputValidator:
     """ Performs simple input validation on passed arguments. Must be an absolute path and exist.
-    Valid files with extension '.pkl', valid files/directories, and all invalid inputs are stored in separate lists. """
+    Valid files with extension '.backup', valid files/directories, and all invalid inputs are stored in separate lists. """
 
     __errorsDictionary: dict[str, list[str]]
     __cinemaArgs: list[str] = []
@@ -32,7 +32,7 @@ class InputValidator:
             if os.path.isabs(path):
                 if os.path.exists(path):  # valid inputs
                     if os.path.isfile(path):
-                        if os.path.splitext(path)[1] == ".pkl":
+                        if os.path.splitext(path)[1] == ".backup":
                             backupList.append(path)
                         else:
                             cinemaList.append(path)
@@ -62,18 +62,18 @@ class InputValidator:
 
         self.__errorsDictionary = errorsDictionary
 
-    def getNumErrors(self) -> int:
-        return len(self.__errorsDictionary)
+    # def getNumErrors(self) -> int:
+    #     return len(self.__errorsDictionary)
 
-    def getErrorsDict(self) -> dict[str, list[str]]:
+    def getValidationErrorsDictionary(self) -> dict[str, list[str]]:
         return self.__errorsDictionary
 
-    def getCinemaArgs(self) -> list[str]:
+    def getCinemaArguments(self) -> list[str]:
         """ Return the processed cinema paths list. """
 
         return self.__cinemaArgs
 
-    def getBackupArgs(self) -> list[str]:
+    def getBackupArguments(self) -> list[str]:
         """ Return the processed backup paths list. """
 
         return self.__backupArgs

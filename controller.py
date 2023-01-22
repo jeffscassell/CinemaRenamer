@@ -1,9 +1,11 @@
 from cinema import Cinema
 from view import View
 from cinemaParser import CinemaParser
+from configparser import ConfigParser
 from fileHandler import FileHandler
 from databasePickle import DatabasePickle
 from inputValidator import InputValidator
+import os
 
 
 # TODO make into package(s)
@@ -17,12 +19,59 @@ class Controller:
     __handler = FileHandler(__database)
     __validator = InputValidator()
 
+    movieLibraryDirectory: str
+    showLibraryDirectory: str
+    copyFlag: bool
+    overwriteFlag: bool
+
     def __init__(self, model: list, view: View):
         self.__model = model
         self.__view = view
+        self.__loadSettings()
 
     def start(self) -> None:
         self.__view.start(self.__model, self)
+
+    ############
+    # SETTINGS #
+    ############
+
+    def __loadSettings(self) -> None:
+
+        def tryReadingLibrary(passed: str) -> str:
+            try:
+                return config.get("libraries", passed, raw=True)  # Raw removes the need to surround the directory in quotes to handle spaces
+            except Exception:
+                return None
+        
+        def tryReadingFlag(passed: str) -> bool:
+            try:
+                return config.getboolean("flags", passed)
+            except Exception:
+                return None
+        
+        settingsFile = "cr_config.ini"
+        config = ConfigParser()
+
+        if os.path.exists(settingsFile) and os.path.getsize(settingsFile) > 0:  # Config file exists and is not empty. Load settings
+            config.read(settingsFile)
+
+            # Libraries
+            self.movieLibraryDirectory = tryReadingLibrary("movies")
+            self.showLibraryDirectory = tryReadingLibrary("shows")
+
+            # Flags
+            self.copyFlag = tryReadingFlag("copy")
+            self.overwriteFlag = tryReadingFlag("overwrite")
+        else:  # Create empty config file
+            config.add_section("libraries")
+            config.set("libraries", "shows", "")
+            config.set("libraries", "movies", "")
+            config.add_section("flags")
+            config.set("flags", "copy", "true")
+            config.set("flags", "overwrite", "true")
+            with open(settingsFile, "w") as outp:
+                config.write(outp)
 
     ##########
     # PARSER #
@@ -91,11 +140,11 @@ class Controller:
     def validate(self, model) -> None:
         self.__validator.doValidation(model)
 
-    def getValidationNumErrors(self) -> int:
-        return self.__validator.getNumErrors()
+    # def getNumberOfValidationErrors(self) -> int:
+    #     return self.__validator.getNumErrors()
 
-    def getValidationErrorDictionary(self) -> dict[str, list[str]]:
-        return self.__validator.getErrorsDict()
+    def getValidationErrorsDictionary(self) -> dict[str, list[str]]:
+        return self.__validator.getValidationErrorsDictionary()
 
     def hasValidatedCinemaArgs(self) -> bool:
         return self.__validator.hasCinema()
@@ -103,8 +152,8 @@ class Controller:
     def hasValidatedBackupArgs(self) -> bool:
         return self.__validator.hasBackup()
 
-    def getCinemaArgs(self) -> list[str]:
-        return self.__validator.getCinemaArgs()
+    def getCinemaArguments(self) -> list[str]:
+        return self.__validator.getCinemaArguments()
 
-    def getBackupArgs(self) -> list[str]:
-        return self.__validator.getBackupArgs()
+    def getBackupArguments(self) -> list[str]:
+        return self.__validator.getBackupArguments()

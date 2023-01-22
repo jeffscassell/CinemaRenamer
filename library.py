@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 class Library:
     __name: str
-    __directory: str
+    __directoryAbsolutePath: str
 
     def __init__(self, name, directory):
         self.__name = name
-        self.__directory = directory
+        self.__directoryAbsolutePath = directory

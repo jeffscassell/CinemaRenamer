@@ -37,7 +37,7 @@ class Movie(Cinema):
     def getNewFileNameSimple(self) -> str:
         return f"{self._title} ({self._date})"
 
-    def getNewDirectory(self) -> str:
+    def getNewFileNameSimple()(self) -> str:
         return self._newFileName
 
     @staticmethod

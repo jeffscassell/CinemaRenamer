@@ -5,6 +5,7 @@ from cinema import Cinema
 from show import Show
 from movie import Movie
 from unknown import Unknown
+from cinemaDirectory import CinemaDirectory
 
 
 class ClassPatternsEmpty(Exception):
@@ -62,40 +63,56 @@ class CinemaParser:
         self.parseCinemaPaths(pathsList)
         return self.__unprocessedCinemaList
 
+
+
     def parseCinemaPaths(self, pathsList: list[str] or str) -> None:
-        """ Main method for this class. Performs all the processing on a passed list and extracts Unknown, Cinema, and Cinema objects with errors into separate lists. """
+        """ Main method for this class. Performs all the processing on a passed list and separates Unknown, Cinema, and Cinema objects with errors into individual lists. """
 
         if isinstance(pathsList, str):
             pathsList = [pathsList]
 
         pathsList = natsorted(pathsList)  # sort list
-        processedCinemaList: list[Cinema] = []
+        unprocessedCinemaDirectoryDictionary: dict[str, CinemaDirectory] = {}
 
         for path in pathsList:
-            cinema = self._getCinema(path)
+            cinemaDirectory: CinemaDirectory
 
-            if isinstance(cinema, list):
-                processedCinemaList += cinema
+            if os.path.isfile(path):
+                cinema = self._createCinemaObject(path)
+
+                if cinema.getNewFileNameSimple() in unprocessedCinemaDirectoryDictionary:
+                    unprocessedCinemaDirectoryDictionary[cinema.getNewFileNameSimple()].append(cinema)
+                else:
+                    unprocessedCinemaDirectoryDictionary[cinema.getNewFileNameSimple()] = CinemaDirectory(cinema)
             else:
-                processedCinemaList.append(cinema)
+                cinemaList = self._createCinemaObjectList(path)
 
-        self.__unprocessedCinemaList = processedCinemaList.copy()
+                pass
+
+            # cinema = self._getCinema(path)
+
+            # if isinstance(cinema, list):
+            #     processedCinemaList += cinema
+            # else:
+            #     processedCinemaList.append(cinema)
+
+        # self.__unprocessedCinemaList = processedCinemaList.copy()
 
         # Extract unknown files from passed list of paths
-        unknownCinemaList: list[Unknown] = []
-        for obj in processedCinemaList[:]:  # Works with a copy of the original list so that changes can be made to the original on the fly
-            if isinstance(obj, Unknown):
-                unknownCinemaList.append(obj)
-                processedCinemaList.remove(obj)
-        self.__unknownCinemaList = unknownCinemaList
+        # unknownCinemaList: list[Unknown] = []
+        # for obj in processedCinemaList[:]:  # Works with a copy of the original list so that changes can be made to the original on the fly
+        #     if isinstance(obj, Unknown):
+        #         unknownCinemaList.append(obj)
+        #         processedCinemaList.remove(obj)
+        # self.__unknownCinemaList = unknownCinemaList
 
-        # Extract already-correct Cinema files from passed list
-        alreadyCorrectCinemaList: list[Cinema] = []
-        for obj in processedCinemaList[:]:
-            if obj.hasCorrectFileName() and obj.hasCorrectDirectoryName():
-                alreadyCorrectCinemaList.append(obj)
-                processedCinemaList.remove(obj)
-        self.__alreadyCorrectCinemaList = alreadyCorrectCinemaList
+        # # Extract already-correct Cinema files from passed list
+        # alreadyCorrectCinemaList: list[Cinema] = []
+        # for obj in processedCinemaList[:]:
+        #     if obj.hasCorrectFileName() and obj.hasCorrectDirectoryName():
+        #         alreadyCorrectCinemaList.append(obj)
+        #         processedCinemaList.remove(obj)
+        # self.__alreadyCorrectCinemaList = alreadyCorrectCinemaList
 
         # Extract Cinema objects that contain errors from passed list
         # errorCinemaList: list[Cinema] = []
@@ -105,16 +122,20 @@ class CinemaParser:
         #             processedCinemaList.remove(obj)
         # self.__errorCinemaList = errorCinemaList
 
-        self.__processedCinemaList = processedCinemaList
+        # self.__processedCinemaList = processedCinemaList
 
-    def _getCinema(self, path: str) -> Cinema or list[Cinema]:
-        """ Parse a single path in string form and return either a single concrete Cinema object, or a list of them,
-        based on file/directory contents. """
 
-        if os.path.isfile(path):
-            return self._createCinemaObject(path)
-        else:
-            return self._getCinemaDir(path)
+
+    # def _getCinema(self, path: str) -> Cinema or list[Cinema]:
+    #     """ Parse a single path in string form and return either a single concrete Cinema object, or a list of them,
+    #     based on file/directory contents. """
+
+    #     if os.path.isfile(path):
+    #         return self._createCinemaObject(path)
+    #     else:
+    #         return self._createCinemaDirectoryObject(path)
+
+
 
     def _createCinemaObject(self, passed: str) -> Cinema:
         """ Parse a single file path and return a single Cinema object. """
@@ -136,7 +157,9 @@ class CinemaParser:
 
         return Unknown(passed, "Not a recognized Cinema file", isFile=True)
 
-    def _getCinemaDir(self, path: str) -> list[Cinema]:
+
+
+    def _createCinemaObjectList(self, path: str) -> list[Cinema]:
         """ Parse a single directory and return a list of Cinema objects, or a single Unknown object if none exist.
         Does not recurse into subdirectories. """
 
@@ -157,6 +180,8 @@ class CinemaParser:
             return [Unknown(path, "No valid files in directory", isFile=False)]
         else:
             return returnList
+
+
 
     def __getCorrectedFileName(self, path: str) -> str:
         """ Process the original file name and return a cleaned string for continued processing. """
@@ -182,12 +207,7 @@ class CinemaParser:
     def __buildRecognizedPatterns(self) -> None:
         """ Build's the CinemaParser's required Pattern objects from the Cinema base class and its subclasses. """
 
-        self.__buildConcretePatternList()
-        self.__buildCommonPatterns()
-
-    def __buildConcretePatternList(self) -> None:
-        """ Build the concrete Cinema object pattern list from the Cinema subclasses. """
-
+        # Build the Cinema objects' concrete patterns list
         patternDictionary: dict = {}
 
         for subclass in Cinema.__subclasses__():
@@ -200,9 +220,7 @@ class CinemaParser:
 
         self.__patternDictionary = patternDictionary
 
-    def __buildCommonPatterns(self) -> None:
-        """ Build the common patterns from the Cinema base class. """
-
+        # Build the common patterns
         self.__resolutionPattern = re.compile(Cinema.getResolutionPattern())
         self.__encodingPattern = re.compile(Cinema.getEncodingPattern())
 
@@ -210,3 +228,5 @@ class CinemaParser:
         self.__doubleSpacesPattern = re.compile(r" {2,}")
         self.__missingSpacesPattern = re.compile(r"((\w)([([])|([])])(\w))")
         self.__beginningTagsPattern = re.compile(r"^\[.+?] ?")
+        
+        

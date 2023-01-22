@@ -114,7 +114,7 @@ class Cinema(ABC):
         return self._oldDirectory
 
     @abstractmethod    
-    def getNewDirectory(self) -> str:
+    def getNewFileNameSimple(self) -> str:
         pass
 
     def getOldDirectoryAbsolutePath(self) -> str:  # [c:\\folder]\\name.ext

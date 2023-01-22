@@ -58,14 +58,14 @@ class FileHandler:
         newFileName = obj.getNewFileName()
         extension = obj.getFileExtension()
         libraryPathAndOldDirectory = f"{library}\\{obj.getOldDirectory()}"
-        libraryPathAndNewDirectory = f"{library}\\{obj.getNewDirectory()}"
+        libraryPathAndNewDirectory = f"{library}\\{obj.getNewFileNameSimple()()}"
         oldAbsolutePath = obj.getOldAbsolutePath()
-        newAbsolutePathInLibrary = f"{library}\\{obj.getNewDirectory()}\\{newFileName}{extension}"
+        newAbsolutePathInLibrary = f"{library}\\{obj.getNewFileNameSimple()()}\\{newFileName}{extension}"
         oldDirectoryExistsInLibrary = os.path.exists(libraryPathAndOldDirectory)  # and obj.getOldDirectory() == obj.getNewDirectory()
         newDirectoryExistsInLibrary = os.path.exists(libraryPathAndNewDirectory)
 
         # Case insensitive windows sometimes gets it wrong when determining if a directory already exists in a library, due to the names being the same but the case being different. This double checks.
-        sameDirectoryNamesDifferentCase = obj.getOldDirectory() != obj.getNewDirectory()
+        sameDirectoryNamesDifferentCase = obj.getOldDirectory() != obj.getNewFileNameSimple()()
 
         # Regardless of the copy flag, files will only be moved if they are NOT already in the library structure
         # os.mkdir(path) (can throw a FileExistsError, or a FileNotFoundError if a file in the parent directory in the path does not exist)

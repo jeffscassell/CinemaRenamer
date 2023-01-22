@@ -49,7 +49,7 @@ class Show(Cinema):
     # GETTERS #
     ###########
     
-    def getNewDirectory(self) -> str:
+    def getNewFileNameSimple(self) -> str:
         return self._title
     
     def getNewFileNameSimple(self) -> str:

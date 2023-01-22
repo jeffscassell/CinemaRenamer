@@ -28,7 +28,7 @@ class Unknown(Cinema):
     def getNewFileNameSimple(self) -> str:
         pass
 
-    def getNewDirectory(self) -> None:
+    def getNewFileNameSimple()(self) -> None:
         pass
 
     def getOldDirectoryAbsolutePath(self) -> str:
