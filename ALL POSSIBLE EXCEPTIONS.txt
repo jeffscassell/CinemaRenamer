@@ -1,0 +1,6 @@
+ALL POSSIBLE EXCEPTIONS
+=======================
+
+Non-cinema file
+Duplicate file, same tags
+Duplicate file, different tags

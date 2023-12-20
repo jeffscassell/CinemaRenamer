@@ -50,25 +50,28 @@ class ViewCLI(View):
         try:
             self.controller.validate(model)
         except ValueError:
-            print(f"Usage: python cinema_renamer.py \"full file path 1\" \"full file path 2\" ...\n\n\
-                \
-                Cinema Renamer is intended to be used by dragging files or folders onto the main Python script (cinema_renamer.py).\n\
-                It can be used to identify movies and TV shows, correct any naming discrepancies (see example below),\n\
-                create backups of the rename so that it can be undone if an error occurs,\n\
-                and automatically integrate the renamed file into its appropriate media library location on disk.\n\n\
-                \
-                ### EXAMPLE ###\n\
-                fight.club.1999.1080p.H.265.(tPB).mkv\n\
-                ->\n\
-                Fight Club (1999) [1080p] [x265].mkv\n\n\
-                \
-                ### SETTING LIBRARIES ###\n\
-                To set the location for the movie and TV show libraries, add their full paths (C:\\example\\example\\movies) to the configuration file (cr_config.ini),\n\
-                which should be located in the same directory as the main Python script. Spaces are acceptable. If the file is missing,\n\
-                running the main script will generate a blank one.\n\n\
-                \
-                ### RESTORING BACKUPS ###\n\
-                To restore a file from backup, simply drag the backup file (Fight Club (1999) [1080p] [x265].backup) onto the main script.\n\n")
+            print(f"Usage: python cinema_renamer.py \"full file path 1\" \"full file path 2\" ...\n\n"
+
+                "Cinema Renamer is intended to be used by dragging files or folders onto the main Python script (cinema_renamer.py).\n"
+                "It can be used to identify movies and TV shows, correct any naming discrepancies (see example below),\n"
+                "create backups of the renameCinema so that it can be undone if an error occurs,\n"
+                "and automatically integrate the renamed file into its appropriate media library location on disk.\n\n\n"
+
+                
+                "### CORRECTION EXAMPLE ###\n"
+                "fight.club.1999.1080p.H.265.(tPB).mp4\n"
+                "->\n"
+                "Fight Club (1999) [1080p] [x265].mp4\n"
+                "Fight Club (1999) [1080p] [x265].mp4.backup\n\n"
+                # TODO Create prompt to set libraries here? Or when the program runs in gneneral with no libraries set?
+                "### SETTING LIBRARIES ###\n"
+                "To set the location for the movie and TV show libraries, add their full paths (C:\\example\\example\\movies)\n"
+                "to the configuration file (cr_config.ini), which should be located in the same directory as the main Python script.\n"
+                "Spaces are acceptable. If the file is missing, running the main script will generate a blank one.\n\n"
+                
+                "### RESTORING BACKUPS ###\n"
+                "To restore a file from backup, simply drag the backup file (Fight Club (1999) [1080p] [x265].mp4.backup)\n"
+                "onto the main script.\n\n")
 
             os.system("pause")
             exit(0)
@@ -89,24 +92,24 @@ class ViewCLI(View):
     def __checkSettings(self) -> None:
         """ Check that settings were loaded successfully into the Controller. Notify user if settings were not loaded and limit functionality. """
 
-        if self.controller.movieLibraryDirectory is None or self.controller.showLibraryDirectory is None:
+        if self.controller.settingsHandler.getMovieLibraryDirectory() is None or self.controller.settingsHandler.getShowLibraryDirectory() is None:
             self.hasLimitedFunctionality = True
 
             # Issue limited functionality warning
-            if self.controller.movieLibraryDirectory is None:
+            if self.controller.settingsHandler.getMovieLibraryDirectory() is None:
                 print(f"MOVIE LIBRARY DIRECTORY IS MISSING")
 
-            if self.controller.showLibraryDirectory is None:
+            if self.controller.settingsHandler.getShowLibraryDirectory() is None:
                 print("SHOW LIBRARY DIRECTORY IS MISSING")
 
             print("\nWITH LIBRARIES MISSING, FUNCTIONALITY IS LIMITED TO RENAMING ONLY. FILES CANNOT BE MOVED OR COPIED INTO LIBRARIES.\n")
         else:  # Both libraries exist
-            self.movieLibraryDirectory = self.controller.movieLibraryDirectory
-            self.showLibraryDirectory = self.controller.showLibraryDirectory
+            self.movieLibraryDirectory = self.controller.settingsHandler.getMovieLibraryDirectory()
+            self.showLibraryDirectory = self.controller.settingsHandler.getShowLibraryDirectory()
 
-            if self.controller.copyFlag is None or self.controller.overwriteFlag is None:
+            if self.controller.settingsHandler.getCopyFlag() is None or self.controller.settingsHandler.getOverwriteFlag() is None:
 
-                if self.controller.copyFlag is None:
+                if self.controller.settingsHandler.getCopyFlag() is None:
                     print("COPY FLAG SETTING IS MISSING FROM CONFIGURATION FILE.")
 
                     # Prompt to copy or move files that need to be integrated
@@ -122,9 +125,9 @@ class ViewCLI(View):
                     else:
                         self.copyFlag = False
                 else:
-                    self.copyFlag = self.controller.copyFlag
+                    self.copyFlag = self.controller.settingsHandler.getCopyFlag()
 
-                if self.controller.overwriteFlag is None:
+                if self.controller.settingsHandler.getOverwriteFlag() is None:
                     print("OVERWRITE FLAG SETTING IS MISSING FROM CONFIGURATION FILE.")
 
                     # Prompt to overwrite or skip files where conflicts exist
@@ -139,14 +142,14 @@ class ViewCLI(View):
                     else:
                         self.overwriteFlag = False
             else:
-                self.overwriteFlag = self.controller.overwriteFlag
+                self.overwriteFlag = self.controller.settingsHandler.getOverwriteFlag()
 
 
 
     def __processCinemaLimited(self, pathList: list[str]) -> None:
         self.__printHeader(f"processing {len(pathList)} cinema file(s)")
 
-        self.controller.parseCinemaPaths(pathList)
+        self.controller.parseCinemaPathsList(pathList)
         unknownCinemaList: list[Cinema] = self.controller.getUnknownCinemaList()
         alreadyCorrectCinemaList: list[Cinema] = self.controller.getAlreadyCorrectCinemaList()
         cinemaList: list[Cinema] = self.controller.getProcessedCinemaList()
@@ -167,7 +170,7 @@ class ViewCLI(View):
     def __processCinema(self, pathList: list[str]) -> None:
         self.__printHeader(f"processing {len(pathList)} file(s)")
 
-        self.controller.parseCinemaPaths(pathList)
+        self.controller.parseCinemaPathsList(pathList)
         unknownCinemaList = self.controller.getUnknownCinemaList()
         # errorCinemaList = self.controller.getErrorCinemaList()
         alreadyCorrectCinemaList = self.controller.getAlreadyCorrectCinemaList()
@@ -190,8 +193,8 @@ class ViewCLI(View):
 
             # Check for false-positives due to the file having the correct directory name, but not being in the library, and re-add them to cinemaList
             for cinema in alreadyCorrectCinemaList[:]:
-                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{cinema.getNewFileNameSimple()()}" == cinema.getOldDirectoryAbsolutePath()
-                alreadyInShowLib = f"{self.showLibraryDirectory}\\{cinema.getNewFileNameSimple()()}" == cinema.getOldDirectoryAbsolutePath()
+                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{cinema.getNewDirectoryName()}" == cinema.getOldDirectoryAbsolutePath()
+                alreadyInShowLib = f"{self.showLibraryDirectory}\\{cinema.getNewDirectoryName()}" == cinema.getOldDirectoryAbsolutePath()
                 if not alreadyInMovieLib and not alreadyInShowLib:
                     alreadyCorrectCinemaList.remove(cinema)
                     cinemaList.append(cinema)
@@ -205,8 +208,8 @@ class ViewCLI(View):
         # Check if Cinema objects are already in library and disable integration if so
         if len(cinemaList) > 0:
             for cinema in cinemaList:
-                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{cinema.getNewFileNameSimple()()}" == cinema.getOldDirectoryAbsolutePath()
-                alreadyInShowLib = f"{self.showLibraryDirectory}\\{cinema.getNewFileNameSimple()()}" == cinema.getOldDirectoryAbsolutePath()
+                alreadyInMovieLib = f"{self.movieLibraryDirectory}\\{cinema.getNewDirectoryName()}" == cinema.getOldDirectoryAbsolutePath()
+                alreadyInShowLib = f"{self.showLibraryDirectory}\\{cinema.getNewDirectoryName()}" == cinema.getOldDirectoryAbsolutePath()
                 if alreadyInMovieLib or alreadyInShowLib:
                     cinema.setIntegrationFalse()
 
@@ -253,7 +256,7 @@ class ViewCLI(View):
 
                     for index in choices:
                         index = int(index)
-                        print(f" {index:>4d}: {cinemaList[index].getNewFileNameSimple()}")
+                        print(f" {index:>4d}: {cinemaList[index].getNewFileNameWithoutTags()}")
 
                         newName = ""
                         cont = True
@@ -276,11 +279,11 @@ class ViewCLI(View):
                                     print("       ILLEGAL CHARACTER ENTERED:  \\ / : * \" < > |")
                                 
                                 # Check that the name is actually changing
-                                if newName == cinemaList[index].getNewFileNameSimple():
+                                if newName == cinemaList[index].getNewFileNameWithoutTags():
                                     cont = True
                                     print("       NAME IS UNCHANGED")
 
-                        cinemaList[index].updateFileNameSimple(newName)
+                        cinemaList[index].updateFileNameWithoutTags(newName)
                         print()
 
                     # End processing corrections
@@ -350,7 +353,7 @@ class ViewCLI(View):
 
         if len(cinemaList) > 0:
             print(f"BACKUP COMPLETE. BACKUP FILE(S) ARE IN DIRECTORY:\n"
-                f"{self.controller.getBackupsDir()}\n")
+                f"{self.controller.getBackupsDirectory()}\n")
             self.__doRename(cinemaList)
 
 
@@ -361,7 +364,7 @@ class ViewCLI(View):
 
         # for obj in cinemaList:
         #             try:
-        #                 self.controller.rename(obj)
+        #                 self.controller.renameCinema(obj)
         #             except Exception as e:
         #                 errorList += f"{str(e)}: {obj.getNewFileName() + obj.getFileExtension()}"
         #                 self.controller.deleteBackup(obj)
@@ -395,7 +398,7 @@ class ViewCLI(View):
                         self.controller.deleteBackup(obj)
                 else:  # If folder is already correctly named
                     try:
-                        self.controller.rename(obj)
+                        self.controller.renameCinema(obj)
                         self.controller.backupOverwrite(obj)
                         # renamedList.append(obj)
                         self.passed()
@@ -434,7 +437,7 @@ class ViewCLI(View):
             if choice == "y":  # Continue
                 for obj in cinemaList[:]:
                     try:
-                        self.controller.rename(obj)
+                        self.controller.renameCinema(obj)
                         self.passed()
                     except Exception as e:
                         self.fail()

@@ -1,37 +1,51 @@
 import os
 from cinema import Cinema
-from database import Database
 import shutil
 
 
 class FileHandler:
     """ Interacts with files and an attached database. """
-
-    __database: Database
-
-    def __init__(self, database: Database):
-        self.__database = database
+    # TODO separate out functions of this class (remove database handling)
 
 
+    # def createBackup(self, cinema: Cinema) -> None:
+    #     self.__database.create(cinema)
 
-    def backup(self, cinema: Cinema) -> None:
-        """ Backup a Cinema object. """
+    # def overwriteBackup(self, cinema: Cinema) -> None:
+    #     self.__database.update(cinema)
+    
+    
+    # def backup(self, cinema: Cinema) -> None:
+    #     """ Backup a Cinema object. """
 
-        self.__database.create(cinema)
+    #     self.__database.create(cinema)
 
     
 
-    def backupOverwrite(self, obj: Cinema) -> None:
-        """ Overwrite an existing database record. """
+    # def backupOverwrite(self, obj: Cinema) -> None:
+    #     """ Overwrite an existing database record. """
 
-        self.__database.update(obj)
+    #     self.__database.update(obj)
 
 
 
-    def backupAppend(self, obj: Cinema) -> None:
-        """ Append to (instead of overwriting) an existing database record. """
+    # def backupAppend(self, obj: Cinema) -> None:
+    #     """ Append to (instead of overwriting) an existing database record. """
 
-        self.__database.createAppend(obj)
+    #     self.__database.createAppend(obj)
+
+    def moveCinema(cinema: Cinema) -> None:
+        """ Move a Cinema object from its original path to its new path. """
+        
+        pass
+
+    def overwriteCinema(cinema: Cinema) -> None:
+        """ Overwrite an existing Cinema file in its new directory"""
+
+    def createNewDirectory(cinema: Cinema) -> None:
+        """ Create a directory for the Cinema's new path. """
+
+        pass
 
 
     
@@ -58,18 +72,18 @@ class FileHandler:
         newFileName = obj.getNewFileName()
         extension = obj.getFileExtension()
         libraryPathAndOldDirectory = f"{library}\\{obj.getOldDirectory()}"
-        libraryPathAndNewDirectory = f"{library}\\{obj.getNewFileNameSimple()()}"
+        libraryPathAndNewDirectory = f"{library}\\{obj.getNewDirectoryName()}"
         oldAbsolutePath = obj.getOldAbsolutePath()
-        newAbsolutePathInLibrary = f"{library}\\{obj.getNewFileNameSimple()()}\\{newFileName}{extension}"
-        oldDirectoryExistsInLibrary = os.path.exists(libraryPathAndOldDirectory)  # and obj.getOldDirectory() == obj.getNewDirectory()
+        newAbsolutePathInLibrary = f"{library}\\{obj.getNewDirectoryName()}\\{newFileName}{extension}"
+        oldDirectoryExistsInLibrary = os.path.exists(libraryPathAndOldDirectory)  # and obj.getOldDirectory() == obj.getNewDirectoryName()
         newDirectoryExistsInLibrary = os.path.exists(libraryPathAndNewDirectory)
 
         # Case insensitive windows sometimes gets it wrong when determining if a directory already exists in a library, due to the names being the same but the case being different. This double checks.
-        sameDirectoryNamesDifferentCase = obj.getOldDirectory() != obj.getNewFileNameSimple()()
+        sameDirectoryNamesDifferentCase = obj.getOldDirectory() != obj.getNewDirectoryName()
 
         # Regardless of the copy flag, files will only be moved if they are NOT already in the library structure
         # os.mkdir(path) (can throw a FileExistsError, or a FileNotFoundError if a file in the parent directory in the path does not exist)
-        # os.replace(src, dst) will work with directories, but they have to be empty. also works cross-platform, whereas os.rename does not
+        # os.replace(src, dst) will work with directories, but they have to be empty. also works cross-platform, whereas os.renameCinema does not
 
         if oldDirectoryExistsInLibrary:  # If the object is already in the library, but the directory is misnamed
             if not newDirectoryExistsInLibrary:
@@ -132,7 +146,7 @@ class FileHandler:
     
 
 
-    def rename(self, cinema: Cinema) -> None:
+    def renameCinema(self, cinema: Cinema) -> None:
         """ The Cinema object's file is not being integrated into a library and just needs renaming in the OS. """
 
         cinema.setNewDirectoryAbsolutePath(cinema.getOldDirectory())

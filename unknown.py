@@ -25,15 +25,18 @@ class Unknown(Cinema):
     def updateFileName(self, passed: str) -> None:
         pass
 
-    def getNewFileNameSimple(self) -> str:
-        pass
+    def getNewDirectoryName(self) -> str:
+        if self.__isFile == True:
+            return "Unknown File"
+        else:
+            return "Unknown Empty Directory"
 
-    def getNewFileNameSimple()(self) -> None:
-        pass
+    def getNewFileNameWithoutTags(self) -> None:
+        return None
 
     def getOldDirectoryAbsolutePath(self) -> str:
         if self.__isFile:
-            return self._oldDirectoryPath
+            return self._oldDirectoryAbsolutePath
         else:
             return self._oldAbsolutePath
 

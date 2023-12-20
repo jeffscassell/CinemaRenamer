@@ -30,23 +30,25 @@ class Movie(Cinema):
         self._backupName = f"{self._newDirectory}.{passed + self._fileExtension}"
         # TODO need to re-parse string to pull out updated title and update it
 
+    def _setDate(self, passed: str) -> None:
+        self._date = passed
+
     ###########
     # GETTERS #
     ###########
 
-    def getNewFileNameSimple(self) -> str:
+    def getNewDirectoryName(self) -> str:
         return f"{self._title} ({self._date})"
 
-    def getNewFileNameSimple()(self) -> str:
+    def getNewFileNameWithoutTags(self) -> str:
         return self._newFileName
 
     @staticmethod
     def getPattern() -> re.Pattern:
         """ Returns a Pattern object to be used in identifying a Movie object. """
 
-        # matches: Title of My-movie; (optional) - Part II; 2012 or (2012) or [2012];
         return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ (- )?)+?)(- (\w+ )+- |(- (\w+ )+)|- )?[([]?"
-                          r"(?P<date>\d{4})[]) ]")
+                          r"(?P<date>\d{4})[]) ](?!( |- | - )([sS](eason)?)? ?(?P<season>\d{1,2}))")
 
     #########
     # OTHER #
@@ -54,7 +56,7 @@ class Movie(Cinema):
 
     def _buildAttributes(self, match: re.Match) -> None:
         self._setTitle(match.group("title"))
-        self._date = match.group("date")
+        self._setDate = match.group("date")
 
     def _buildNewFileName(self) -> None:
         title = self._title

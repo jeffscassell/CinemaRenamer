@@ -23,23 +23,23 @@ class Cinema(ABC):
     _title: str
     _resolution: str or None  # 1080p
     _encoding: str or None  # 265
-    # _error: str or None = None
+    _error: str = ""
 
     def __init__(self, passedAbsolutePath: str):
         self._oldAbsolutePath = passedAbsolutePath
         self._oldDirectoryAbsolutePath = os.path.dirname(passedAbsolutePath)
         self._oldDirectory = os.path.split(self._oldDirectoryAbsolutePath)[1]
 
-        tmp = os.path.splitext(os.path.basename(passedAbsolutePath))
-        self._oldFileName = tmp[0]
-        self._fileExtension = tmp[1]
+        fileNameTuple = os.path.splitext(os.path.basename(passedAbsolutePath))
+        self._oldFileName = fileNameTuple[0]
+        self._fileExtension = fileNameTuple[1]
 
     ##########
     # CHECKS #
     ##########
 
-    # def hasError(self) -> bool:
-    #     return self._error is not None
+    def hasError(self) -> bool:
+        return self._error != ""
 
     def hasCorrectFileName(self) -> bool:
         return self._oldFileName == self._newFileName
@@ -65,9 +65,9 @@ class Cinema(ABC):
 
     @abstractmethod
     def updateFileName(self, passed: str) -> None:
-        """ Changes the new file name, but also changes the backup name. """
+        """ Changes the new file name, but also updates the backup name. """
 
-    def updateFileNameSimple(self, passed: str) -> None:
+    def updateFileNameWithoutTags(self, passed: str) -> None:
         self.updateFileName(f"{passed}{self._getTags()}")
 
     def setBackupName(self, passed: str) -> None:
@@ -82,10 +82,9 @@ class Cinema(ABC):
         self._needsIntegration = False
 
     def _setTitle(self, passed: str) -> None:
-        """ Set the title of the Cinema object. """
+        """ Set the title of the Cinema object. Automatically capitalizes and otherwise corrects the title. """
 
-        # self._title = passed[:-1]  # remove the trailing space that is always attached to the title group
-        self._title = self._capitalize(passed)
+        self._title = self._capitalizeAsTitle(passed)
 
     def _setResolution(self, match: re.Match or None) -> None:
         """ Set the resolution of the Cinema object (e.g., 1080p). """
@@ -101,20 +100,24 @@ class Cinema(ABC):
         if match is None:
             self._encoding = None
         else:
-            self._encoding = match.group("encoding")
+            encoding = match.group("encoding")
+            if encoding == "HEVC":
+                self._encoding = "265"
+            else:
+                self._encoding = encoding
 
     ###########
     # GETTERS #
     ###########
 
-    # def getError(self) -> str:
-    #     return self._error
+    def getError(self) -> str:
+        return self._error
 
     def getOldDirectory(self) -> str:  # c:\\[folder]\\name.ext
         return self._oldDirectory
 
     @abstractmethod    
-    def getNewFileNameSimple(self) -> str:
+    def getNewDirectoryName(self) -> str:
         pass
 
     def getOldDirectoryAbsolutePath(self) -> str:  # [c:\\folder]\\name.ext
@@ -126,7 +129,7 @@ class Cinema(ABC):
     def getOldAbsolutePath(self) -> str:  # [c:\\folder\\name.ext]
         return self._oldAbsolutePath
 
-    def getNewAbsolutePath(self) -> str:
+    def getNewAbsolutePath(self) -> str:  # TODO huh???? ** needs fixing. has to be tied to library
         return f"{self._oldDirectoryAbsolutePath}\\{self._newFileName}{self._fileExtension}"
 
     def getOldFileName(self) -> str:
@@ -136,7 +139,7 @@ class Cinema(ABC):
         return self._newFileName
     
     @abstractmethod
-    def getNewFileNameSimple(self) -> str:
+    def getNewFileNameWithoutTags(self) -> str:
         pass
 
     def getBackupName(self) -> str:  # c:\\[folder.name.ext]
@@ -169,22 +172,22 @@ class Cinema(ABC):
     def getResolutionPattern() -> re.Pattern:
         """ Returns the Pattern object relating to resolution. """
 
-        return re.compile(r"(?P<resolution>(480p|720p|1080p))")
+        return re.compile(r"(?P<resolution>(360p|480p|720p|1080p))")
 
     @staticmethod
     def getEncodingPattern() -> re.Pattern:
         """ Returns the Pattern object relating to encoding. """
 
-        return re.compile(r"([xhH][ .]?)?(?P<encoding>26[45])")
+        return re.compile(r"([xhH][ .]?)?(?P<encoding>(26[45]|HEVC))")
 
     @staticmethod
     @abstractmethod
     def getPattern() -> re.Pattern:
         """ Returns a Pattern object to be used in identifying concrete subclass objects. """
 
-    #########
-    # OTHER #
-    #########
+    ###########
+    # UTILITY #
+    ###########
 
     @abstractmethod
     def _buildAttributes(self, specificMatch: re.Match) -> None:
@@ -195,32 +198,33 @@ class Cinema(ABC):
         """ Build a new file name based on the filled attributes. """
 
     @staticmethod
-    def _capitalize(title: str) -> str:
-
-        def uppercaseFirstAndLastWordsInTitle() -> None:
-            if numberOfWords > 0:
-                titleWordList[0] = titleWordList[0][:1].upper() + titleWordList[0][1:]
-                titleWordList[-1] = titleWordList[-1][:1].upper() + titleWordList[-1][1:]
-
-        def lowercaseOrUppercaseRelevantWordsInTitle() -> None:
-            i = 1  # skip the first word in the title
-            if numberOfWords > 2:
-                for _ in range(numberOfWords - 2):  # skip the last word in the title
-                    if titleWordList[i].lower() in lowercaseList:
-                        titleWordList[i] = titleWordList[i].lower()
-                    else:
-                        titleWordList[i] = titleWordList[i][:1].upper() + titleWordList[i][1:]
-                    i += 1
+    def _capitalizeAsTitle(title: str) -> str:
+        """ Capitalize any passed string with title formatting. """
 
         articles = ["a", "an", "the"]
         coordConjunctions = ["for", "and", "but", "yet", "or", "nor", "if", "vs"]
         prepositions = ["as", "at", "by", "of", "to", "on", "off", "with", "without", "in", "per", "via"]
         lowercaseList = articles + coordConjunctions + prepositions
 
-        titleWordList = title.split()
-        numberOfWords = len(titleWordList)
+        wordList = title.split()
+        numberOfWords = len(wordList)
 
-        uppercaseFirstAndLastWordsInTitle()
-        lowercaseOrUppercaseRelevantWordsInTitle()
+        # Uppercase first and last words in title
+        if numberOfWords > 0:
+            if numberOfWords == 1:  # Prevents doing extra work if the title is only a single word
+                wordList[0] = wordList[0][:1].upper() + wordList[0][1:]
+            else:
+                wordList[0] = wordList[0][:1].upper() + wordList[0][1:]
+                wordList[-1] = wordList[-1][:1].upper() + wordList[-1][1:]
+        
+        # Lowercase or uppercase relevant words in title
+        i = 1  # Skips the first word in the title
+        if numberOfWords > 2:
+            for _ in range(numberOfWords - 2):  # Skips the last word in the title and accounts for off-by-one
+                if wordList[i].lower() in lowercaseList:
+                    wordList[i] = wordList[i].lower()
+                else:
+                    wordList[i] = wordList[i][:1].upper() + wordList[i][1:]
+                i += 1
 
-        return " ".join(titleWordList)
+        return " ".join(wordList)

@@ -40,9 +40,8 @@ class CinemaParser:
     def __init__(self):
         self.__buildRecognizedPatterns()
 
-    ###########
-    # GETTERS #
-    ###########
+    # GETTERS
+    #########
 
     def getUnprocessedCinemaList(self) -> list[Cinema]:
         return self.__unprocessedCinemaList
@@ -60,34 +59,41 @@ class CinemaParser:
         return self.__processedCinemaList
 
     def parseAndGetUnprocessedCinemaList(self, pathsList: list[str] or str) -> list[Cinema]:
-        self.parseCinemaPaths(pathsList)
+        self.parseCinemaPathsList(pathsList)
         return self.__unprocessedCinemaList
 
+    def parseCinemaPathAndGetDirectoryObject(self, path: str) -> CinemaDirectory:
+        pass
 
+    # UTILITY
+    #########
 
-    def parseCinemaPaths(self, pathsList: list[str] or str) -> None:
+    def parseCinemaPathsList(self, pathsList: list[str] or str) -> None:
         """ Main method for this class. Performs all the processing on a passed list and separates Unknown, Cinema, and Cinema objects with errors into individual lists. """
+
+        def addToDirectoryDictionary(dictionary: dict[str, CinemaDirectory], cinema: Cinema) -> None:
+            if cinema.getNewDirectoryName() in dictionary:  # Search through keys to see if directory already exists
+                dictionary[cinema.getNewDirectoryName()].append(cinema)
+            else:
+                dictionary[cinema.getNewDirectoryName()] = CinemaDirectory(cinema)
 
         if isinstance(pathsList, str):
             pathsList = [pathsList]
 
-        pathsList = natsorted(pathsList)  # sort list
+        pathsList = natsorted(pathsList)  # Sort list
         unprocessedCinemaDirectoryDictionary: dict[str, CinemaDirectory] = {}
 
         for path in pathsList:
-            cinemaDirectory: CinemaDirectory
-
             if os.path.isfile(path):
                 cinema = self._createCinemaObject(path)
+                # TODO mixed/missing tags between files of a directory are an issue
 
-                if cinema.getNewFileNameSimple() in unprocessedCinemaDirectoryDictionary:
-                    unprocessedCinemaDirectoryDictionary[cinema.getNewFileNameSimple()].append(cinema)
-                else:
-                    unprocessedCinemaDirectoryDictionary[cinema.getNewFileNameSimple()] = CinemaDirectory(cinema)
+                addToDirectoryDictionary(unprocessedCinemaDirectoryDictionary, cinema)
             else:
                 cinemaList = self._createCinemaObjectList(path)
 
-                pass
+                for cinema in cinemaList:
+                    addToDirectoryDictionary(unprocessedCinemaDirectoryDictionary, cinema)
 
             # cinema = self._getCinema(path)
 
@@ -164,39 +170,39 @@ class CinemaParser:
         Does not recurse into subdirectories. """
 
         directoryContentsFileNames = os.listdir(path)  # returns only the file names (not full paths)
-        returnList = []
+        cinemaList = []
 
         for fileName in directoryContentsFileNames:
-            itemPath = os.path.join(path, fileName)  # convert list items to full paths
+            fileAbsolutePath = os.path.join(path, fileName)  # convert list items to full paths
 
-            # only process files (no recursion into directory trees)
-            if os.path.isfile(itemPath):
-                cinema = self._createCinemaObject(itemPath)
+            # Only process files (no recursion into directories)
+            if os.path.isfile(fileAbsolutePath):
+                cinema = self._createCinemaObject(fileAbsolutePath)
 
                 if not isinstance(cinema, Unknown):
-                    returnList.append(cinema)
+                    cinemaList.append(cinema)
 
-        if len(returnList) == 0:
+        if len(cinemaList) == 0:
             return [Unknown(path, "No valid files in directory", isFile=False)]
         else:
-            return returnList
+            return cinemaList
 
 
 
     def __getCorrectedFileName(self, path: str) -> str:
         """ Process the original file name and return a cleaned string for continued processing. """
 
-        # replace . and _ with space
+        # Replace . and _ with space
         # .'s that aren't preceded by a capital letter (F.B.I.)
         cleanFileName = re.sub(self.__dotsOrUnderscoresPattern, " ", path)
 
-        # remove any double spaces (or more)
+        # Remove any double (or more) spaces
         cleanFileName = re.sub(self.__doubleSpacesPattern, " ", cleanFileName)
 
-        # add spaces that should be there
+        # Add spaces that should be there
         cleanFileName = re.sub(self.__missingSpacesPattern, r"\2 \3", cleanFileName)
 
-        # remove tags at beginning of file name
+        # Remove tags at beginning of file name
         cleanFileName = re.sub(self.__beginningTagsPattern, "", cleanFileName)
 
         return cleanFileName

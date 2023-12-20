@@ -6,6 +6,8 @@ from fileHandler import FileHandler
 from databasePickle import DatabasePickle
 from inputValidator import InputValidator
 import os
+from settingsHandler import SettingsHandler
+from cinemaDirectory import CinemaDirectory
 
 
 # TODO make into package(s)
@@ -16,69 +18,25 @@ class Controller:
 
     __parser = CinemaParser()
     __database = DatabasePickle()
-    __handler = FileHandler(__database)
+    __fileHandler = FileHandler(__database)
     __validator = InputValidator()
-
-    movieLibraryDirectory: str
-    showLibraryDirectory: str
-    copyFlag: bool
-    overwriteFlag: bool
+    settingsHandler = SettingsHandler()
 
     def __init__(self, model: list, view: View):
         self.__model = model
         self.__view = view
-        self.__loadSettings()
+        self.settingsHandler.loadSettingsFile()
+        # self.__fileHandler.loadDatabase()
 
     def start(self) -> None:
         self.__view.start(self.__model, self)
-
-    ############
-    # SETTINGS #
-    ############
-
-    def __loadSettings(self) -> None:
-
-        def tryReadingLibrary(passed: str) -> str:
-            try:
-                return config.get("libraries", passed, raw=True)  # Raw removes the need to surround the directory in quotes to handle spaces
-            except Exception:
-                return None
-        
-        def tryReadingFlag(passed: str) -> bool:
-            try:
-                return config.getboolean("flags", passed)
-            except Exception:
-                return None
-        
-        settingsFile = "cr_config.ini"
-        config = ConfigParser()
-
-        if os.path.exists(settingsFile) and os.path.getsize(settingsFile) > 0:  # Config file exists and is not empty. Load settings
-            config.read(settingsFile)
-
-            # Libraries
-            self.movieLibraryDirectory = tryReadingLibrary("movies")
-            self.showLibraryDirectory = tryReadingLibrary("shows")
-
-            # Flags
-            self.copyFlag = tryReadingFlag("copy")
-            self.overwriteFlag = tryReadingFlag("overwrite")
-        else:  # Create empty config file
-            config.add_section("libraries")
-            config.set("libraries", "shows", "")
-            config.set("libraries", "movies", "")
-            config.add_section("flags")
-            config.set("flags", "copy", "true")
-            config.set("flags", "overwrite", "true")
-            with open(settingsFile, "w") as outp:
-                config.write(outp)
 
     ##########
     # PARSER #
     ##########
 
-    def parseCinemaPaths(self, model: list[str] or str) -> None:
-        self.__parser.parseCinemaPaths(model)
+    def parseCinemaPathsList(self, model: list[str] or str) -> None:
+        self.__parser.parseCinemaPathsList(model)
 
     def getProcessedCinemaList(self) -> list[Cinema]:
         return self.__parser.getProcessedCinemaList()
@@ -92,46 +50,53 @@ class Controller:
     # def getErrorCinemaList(self) -> list[Cinema]:
     #     return self.__parser.getErrorCinemaList()
 
-    ###########
-    # HANDLER #
-    ###########
+    ############
+    # HANDLERS #
+    ############
 
-    def getBackupsDir(self) -> str:
+    # FILE #
+
+    def checkDirectoryExistsInLibrary(self, cinemaDirectory: CinemaDirectory) -> bool:
+        pass
+
+    def getBackupsDirectory(self) -> str:
         return self.__database.getBackupsAbsPath()
 
     def backup(self, obj: Cinema) -> None:  # throws ValueError if name is unchanged
         """ Create database record of Cinema object. """
 
-        self.__handler.backup(obj)
+        self.__fileHandler.backup(obj)
 
     def backupOverwrite(self, obj: Cinema) -> None:
-        self.__handler.backupOverwrite(obj)
+        self.__fileHandler.backupOverwrite(obj)
 
     def backupAppend(self, obj: Cinema) -> None:
-        self.__handler.backupAppend(obj)
+        self.__fileHandler.backupAppend(obj)
 
     def deleteBackup(self, obj: Cinema) -> None:
-        self.__handler.deleteBackup(obj)
+        self.__fileHandler.deleteBackup(obj)
 
-    def rename(self, obj: Cinema) -> None:
+    def renameCinema(self, obj: Cinema) -> None:
         """ Rename the Cinema object's file. """
         
-        self.__handler.rename(obj)
+        self.__fileHandler.renameCinema(obj)
     
     def integrateIntoLibrary(self, obj: Cinema, library: str, copyFlag: bool, overwriteFlag: bool) -> None:
         """ The object file is integrated into the provided library directory. The copy flag indicates if the file is meant to be copied from the original directory into the new one, or moved.
             The overwrite flag indicates if the file is to be overwritten when a conflict exists, or skipped. """
 
-        self.__handler.integrateIntoLibrary(obj, library, copyFlag, overwriteFlag)
+        self.__fileHandler.integrateIntoLibrary(obj, library, copyFlag, overwriteFlag)
 
     def readObjFromBackup(self, path: str) -> Cinema:
-        return self.__handler.readObjFromBackup(path)
+        return self.__fileHandler.readObjFromBackup(path)
 
     def restoreBackupObj(self, obj: str) -> None:
-        self.__handler.restoreBackupObj(obj)
+        self.__fileHandler.restoreBackupObj(obj)
 
     def buildLibraries(self) -> None:
         pass
+
+    # DATABASE
 
     #############
     # VALIDATOR #

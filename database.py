@@ -12,21 +12,21 @@ class Database(ABC):
         """ Add a new record to the database. """
 
     @abstractmethod
-    def createAppend(self, record: Cinema):
-        """ Append to an existing in the database record. """
+    def read(self, record: str) -> Cinema:
+        """ Read a record from the database. """
+
+    # @abstractmethod
+    # def createAppend(self, record: Cinema):
+    #     """ Append to an existing in the database record. """
 
     @abstractmethod
     def update(self, record: Cinema):
         """ Update a record in the database. """
 
     @abstractmethod
-    def read(self, record: str) -> Cinema:
-        """ Read a record from the database. """
-
-    @abstractmethod
     def delete(self, record: Cinema):
         """ Delete a record from the database. """
 
-    @abstractmethod
-    def getBackupsAbsPath(self) -> str:
-        """ Return the absolute path of the backup directory. """
+    # @abstractmethod
+    # def getBackupsAbsPath(self) -> str:
+    #     """ Return the absolute path of the backup directory. """

@@ -12,7 +12,7 @@ class DatabasePickle(Database):
     PICKLE_PROTOCOL = 4
     __filePath = os.path.dirname(os.path.abspath(__file__))
     BACKUP_PATH = f"{__filePath}\\Cinema Renamer Backups"
-    EXT = ".backup"
+    BACKUP_EXTENSION = ".backup"
 
 
 
@@ -21,34 +21,36 @@ class DatabasePickle(Database):
             os.mkdir(self.BACKUP_PATH)
 
 
-
     def getBackupsAbsPath(self) -> str:
         return os.path.join(os.getcwd(), self.BACKUP_PATH)
 
 
+    def create(self, cinema: Cinema) -> None:
+        # C:\example\movie library\Fight Club (1999) [1080p] [x265].mp4.backup
+        with open(f"{cinema.getNewAbsolutePath()}{self.BACKUP_EXTENSION}", "xb") as outputFile:
+            pickle.dump(cinema, outputFile, self.PICKLE_PROTOCOL)
 
-    def create(self, record: Cinema) -> None:
-        """ Create new record. If record already exists, an appendment is made to the record name. """
 
-        with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}", "xb") as outp:  # folder.file.ext.pkl | xb, exclusive creation (no overwrite) in binary mode
-            pickle.dump(record, outp, self.PICKLE_PROTOCOL)
+    # def create(self, record: Cinema) -> None:
+    #     """ Create new record. If record already exists, an appendment is made to the record name. """
 
+    #     with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}", "xb") as outp:  # folder.file.ext.pkl | xb, exclusive creation (no overwrite) in binary mode
+    #         pickle.dump(record, outp, self.PICKLE_PROTOCOL)
 
 
     def update(self, record: Cinema) -> None:
         """ Overwrite an existing record. """
 
-        with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}", "wb") as outp:
+        with open(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.BACKUP_EXTENSION}", "wb") as outp:
             pickle.dump(record, outp, self.PICKLE_PROTOCOL)
             
-
 
     def createAppend(self, record: Cinema) -> None:
         backupName = record.getBackupName()
         append = ""
         i = 1
 
-        while os.path.exists(f"{self.BACKUP_PATH}\\{backupName}{append}{self.EXT}"):  # folder.file.ext(1).pkl
+        while os.path.exists(f"{self.BACKUP_PATH}\\{backupName}{append}{self.BACKUP_EXTENSION}"):  # folder.file.ext(1).pkl
             append = f"({i})"
             i += 1
         
@@ -60,7 +62,6 @@ class DatabasePickle(Database):
         self.create(record)
 
 
-
     def read(self, path: str) -> Cinema:
         try:
             with open(path, "rb") as inp:  # read bytes
@@ -69,8 +70,7 @@ class DatabasePickle(Database):
             raise ValueError()
 
 
-
     def delete(self, record: Cinema) -> None:  # throws FileNotFoundError
         """ Delete backup file from Cinema object. """
 
-        os.remove(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.EXT}")
+        os.remove(f"{self.BACKUP_PATH}\\{record.getBackupName()}{self.BACKUP_EXTENSION}")

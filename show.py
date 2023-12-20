@@ -40,19 +40,22 @@ class Show(Cinema):
         #         self._episodeTitle = passed
         # else:
         #     self._episodeTitle = passed
-        self._episodeTitle = self._capitalize(passed)
+        self._episodeTitle = self._capitalizeAsTitle(passed)
 
     def _setEpisode(self, passed: str) -> None:
         self._episode = passed
+
+    def _setSeason(self, passed: str) -> None:
+        self._season = passed
 
     ###########
     # GETTERS #
     ###########
     
-    def getNewFileNameSimple(self) -> str:
+    def getNewDirectoryName(self) -> str:
         return self._title
     
-    def getNewFileNameSimple(self) -> str:
+    def getNewFileNameWithoutTags(self) -> str:
         name = f"{self._title} {self._season}x{self._episode}"
 
         if not self._episodeTitle == "":
@@ -64,10 +67,15 @@ class Show(Cinema):
     def getPattern() -> re.Pattern:
         """ Returns a Pattern object to be used in identifying a Show object. """
 
-        # matches: Title of a Show; (optional) - More to the Title; S01; E02; (optional) Title of the Episode
-        return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_\-]+ )+?)(- (\w+ )+- |- (\w+ )+|- )?([sS]eason|[sS])? ?"
-                          r"(?P<season>\d{1,2})(x|[eE]pisode|[eE]) ?(?P<episode>\d{1,2})( \[?\d{3,4}p.*| - | |$)"
-                          r"(?P<episodeTitle>([!0-9a-zA-Z.',_\-]+( |$))+?|$)(\[?\d{3,4}p|\[|$)")
+        return re.compile(r"^(?P<title>([!0-9a-zA-Z.',_-]+ )+)(- |- (\w+ )+(- )?|)(\(?(?P<date>\d{4})\)? |)"
+                          r"(- |- (\w+ )+(- )?|)(|[sS](eason)? ?|)(?P<season>\d{1,2}) ?(x|[eE](pisode)?|) ?"
+                          r"(?P<episode>\d{1,2})( |- |$)(?P<episodeTitle>([!0-9a-zA-Z.',_-]+ ?)+)($|[[(]?(\d{3,4}p)?)")
+        
+        # Old
+        # r"^(?P<title>([!0-9a-zA-Z.',_\-]+ )+?)(- (\w+ )+- |- (\w+ )+|- )?([sS]eason|[sS])? ?"
+        #                   r"(?P<season>\d{1,2})(x|[eE]pisode|[eE]) ?(?P<episode>\d{1,2})( \[?\d{3,4}p.*| - | |$)"
+        #                   r"(?P<episodeTitle>([!0-9a-zA-Z.',_\-]+( |$))+?|$)([[(]?\d{3,4}p|\[|$)")
+        # TODO fix shows with dates (1999) registering as movies instead of shows
 
     #########
     # OTHER #
@@ -75,8 +83,8 @@ class Show(Cinema):
 
     def _buildAttributes(self, match: re.Match) -> None:
         self._setTitle(match.group("title"))
-        self._season = match.group("season")
-        self._episode = match.group("episode")
+        self._setSeason = match.group("season")
+        self._setEpisode = match.group("episode")
         self._setEpisodeTitle(match.group("episodeTitle"))
         self._newDirectory = self._title
 
