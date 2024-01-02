@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from sys import argv
 import os
-API_KEY = "8eac7bdc5eac6879ab8c8a97848f0e74"
 
 
 class Entertainment(ABC):
