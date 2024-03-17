@@ -24,8 +24,6 @@ from configparser import ConfigParser
 # print(f"{showsDir}")
 
 
-API_KEY = "8eac7bdc5eac6879ab8c8a97848f0e74"  # TMDB
-
 def main():
     c = Controller(argv[1:], ViewCLI())
     c.start()
